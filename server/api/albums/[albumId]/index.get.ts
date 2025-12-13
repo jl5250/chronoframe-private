@@ -27,6 +27,36 @@ export default eventHandler(async (event) => {
     })
   }
 
+  const session = await getUserSession(event)
+  const isLoggedIn = !!session.user
+
+  if (album.isHidden && !isLoggedIn) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: 'Access denied',
+    })
+  }
+
+  // 如果用户未登录，获取所有隐藏相册中的照片ID，用于过滤
+  let hiddenPhotoIds: string[] = []
+  if (!isLoggedIn) {
+    const hiddenAlbumIds = db
+      .select({ id: tables.albums.id })
+      .from(tables.albums)
+      .where(eq(tables.albums.isHidden, 1))
+      .all()
+      .map((album) => album.id)
+
+    if (hiddenAlbumIds.length > 0) {
+      hiddenPhotoIds = db
+        .select({ photoId: tables.albumPhotos.photoId })
+        .from(tables.albumPhotos)
+        .where(inArray(tables.albumPhotos.albumId, hiddenAlbumIds))
+        .all()
+        .map((row) => row.photoId)
+    }
+  }
+
   // 获取相册中的照片
   const photos = await db
     // all fields from tables.photos
@@ -42,8 +72,13 @@ export default eventHandler(async (event) => {
     .orderBy(asc(tables.albumPhotos.position))
     .all()
 
+  // 如果用户未登录，过滤掉在隐藏相册中的照片
+  const filteredPhotos = !isLoggedIn
+    ? photos.filter((photo) => !hiddenPhotoIds.includes(photo.id))
+    : photos
+
   // 验证相册数据完整性
-  if (!photos || !Array.isArray(photos)) {
+  if (!filteredPhotos || !Array.isArray(filteredPhotos)) {
     // 空相册也是合法的，只需要返回空数组
     return {
       ...album,
@@ -53,6 +88,6 @@ export default eventHandler(async (event) => {
 
   return {
     ...album,
-    photos,
+    photos: filteredPhotos,
   }
 })

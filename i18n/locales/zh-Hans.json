@@ -693,7 +693,9 @@
         "selectPhotos": "选择照片",
         "editPhotos": "修改照片选择",
         "selectedCount": "已选择 {count} 张照片",
-        "clearAll": "全部清除"
+        "clearAll": "全部清除",
+        "isHidden": "隐藏相册",
+        "isHiddenHelp": "隐藏的相册只有登录用户可见，相册中的照片也不会在首页显示"
       },
       "table": {
         "columns": {

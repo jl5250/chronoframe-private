@@ -8,6 +8,7 @@ export default eventHandler(async (event) => {
     z.object({
       title: z.string().min(1).max(255),
       description: z.string().max(1000).optional(),
+      isHidden: z.boolean().optional(),
       coverPhotoId: z.string().optional(),
       photoIds: z.array(z.string()).optional(),
     }).parse,
@@ -21,6 +22,7 @@ export default eventHandler(async (event) => {
       .values({
         title: body.title,
         description: body.description || null,
+        isHidden: body.isHidden ? 1 : 0,
         coverPhotoId: body.coverPhotoId || null,
       })
       .returning()

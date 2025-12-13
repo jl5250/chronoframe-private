@@ -9,6 +9,7 @@ const { data: albums } = useAsyncData(
   () => $fetch('/api/albums'),
   {
     watch: [],
+    server: false,
   },
 )
 

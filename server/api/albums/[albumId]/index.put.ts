@@ -18,6 +18,7 @@ export default eventHandler(async (event) => {
     z.object({
       title: z.string().min(1).max(255).optional(),
       description: z.string().max(1000).optional(),
+      isHidden: z.boolean().optional(),
       coverPhotoId: z.string().optional(),
       photoIds: z.array(z.string()).optional(),
     }).parse,
@@ -52,6 +53,10 @@ export default eventHandler(async (event) => {
 
     if (body.description !== undefined) {
       updateData.description = body.description || null
+    }
+
+    if (body.isHidden !== undefined) {
+      updateData.isHidden = body.isHidden ? 1 : 0
     }
 
     if (body.coverPhotoId !== undefined) {
