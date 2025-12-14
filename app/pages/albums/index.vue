@@ -2,8 +2,9 @@
 import { motion } from 'motion-v'
 
 const config = useRuntimeConfig()
+const route = useRoute()
 const { photos } = usePhotos()
-const { data: albums } = useAsyncData(
+const { data: albums, refresh: refreshAlbums } = useAsyncData(
   'albums',
   // @ts-nocheck
   () => $fetch('/api/albums'),
@@ -12,6 +13,12 @@ const { data: albums } = useAsyncData(
     server: false,
   },
 )
+
+watch(() => route.path, async () => {
+  if (route.path === '/albums') {
+    await refreshAlbums()
+  }
+})
 
 // randomly pick 30 photos for waterfall
 const waterfallPhotos = computed(() =>

@@ -35,6 +35,7 @@ useHead({
 
 const MAX_FILE_SIZE = 256 // in MB
 
+const route = useRoute()
 const dayjs = useDayjs()
 
 const { status, refresh } = usePhotos()
@@ -1932,6 +1933,16 @@ const handleBatchDownload = async () => {
 watch(isImagePreviewOpen, (open) => {
   if (!open) {
     previewingPhoto.value = null
+  }
+})
+
+// 监听路由变化，刷新数据
+watch(() => route.path, async () => {
+  if (route.path === '/dashboard/photos') {
+    await refresh()
+    if (filteredData.value.length > 0) {
+      await fetchReactions(filteredData.value.map((p: Photo) => p.id))
+    }
   }
 })
 

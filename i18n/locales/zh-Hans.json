@@ -927,6 +927,18 @@
           "label": "MapLibre 样式",
           "description": "MapLibre 地图样式 URL"
         }
+      },
+      "amap": {
+        "key": {
+          "label": "高德地图 API Key",
+          "description": "高德地图 JS API Key",
+          "help": "请在高德开放平台申请 Web 端（JS API）密钥"
+        },
+        "securityCode": {
+          "label": "高德地图安全密钥",
+          "description": "高德地图安全密钥（可选）",
+          "help": "用于提高 API 调用的安全性，可在高德开放平台配置"
+        }
       }
     },
     "location": {
@@ -943,6 +955,17 @@
           "description": "Nominatim 反向地理编码 API 的基础 URL",
           "help": "留空则默认使用公共 Nominatim 服务"
         }
+      },
+      "amap": {
+        "key": {
+          "label": "高德地图 API Key",
+          "description": "高德地图 Web 服务 API Key",
+          "help": "请在高德开放平台申请 Web 服务 API 密钥，用于地理编码服务"
+        }
+      },
+      "provider": {
+        "label": "位置服务提供商",
+        "description": "选择反向地理编码服务提供商"
       }
     },
     "storage": {

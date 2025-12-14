@@ -22,6 +22,8 @@ interface AlbumFormState {
   isHidden: boolean
 }
 
+const route = useRoute()
+
 const albums = ref<AlbumItem[]>([])
 const isLoadingAlbums = ref(false)
 const allPhotos = ref<Photo[]>([])
@@ -279,6 +281,12 @@ const filteredPhotos = computed(() => {
 
 onMounted(async () => {
   await Promise.all([loadPhotos(), loadAlbums()])
+})
+
+watch(() => route.path, async () => {
+  if (route.path === '/dashboard/albums') {
+    await Promise.all([loadPhotos(), loadAlbums()])
+  }
 })
 
 const dayjs = useDayjs()
