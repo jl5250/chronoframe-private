@@ -19,6 +19,7 @@ import {
 } from '../location/geocoding'
 import { findLivePhotoVideoForImage } from '../video/livephoto'
 import { processMotionPhotoFromXmp } from '../video/motion-photo'
+import { processVideoMetadata } from '../video/processor'
 import { getStorageManager } from '~~/server/plugins/3.storage'
 
 export class QueueManager {
@@ -675,6 +676,137 @@ export class QueueManager {
           throw error
         }
       },
+      video: async (task: PipelineQueueItem) => {
+        const { id: taskId, payload } = task
+        if (payload.type !== 'video') {
+          throw new Error(
+            `Invalid payload type for video task: ${payload.type}`,
+          )
+        }
+        const { storageKey } = payload
+        const storageProvider = getStorageManager().getProvider()
+        const photoId = generateSafePhotoId(storageKey)
+
+        try {
+          this.logger.info(`Start processing video task ${taskId}: ${storageKey}`)
+
+          let storageObject = await storageProvider.getFileMeta(storageKey)
+          if (!storageObject) {
+            const maybeBuffer = await storageProvider.get(storageKey)
+            if (maybeBuffer) {
+              storageObject = {
+                key: storageKey,
+                size: maybeBuffer.length,
+                lastModified: new Date(),
+              }
+            }
+          }
+          if (!storageObject) {
+            throw new Error(`Storage object not found`)
+          }
+
+          await this.updateTaskStage(taskId, 'video-metadata')
+          this.logger.info(`[${taskId}:in-stage] video metadata extraction`)
+          const processedData = await processVideoMetadata(storageKey)
+          if (!processedData) {
+            throw new Error('Video metadata processing failed')
+          }
+
+          const { metadata, thumbnailBuffer } = processedData
+
+          await this.updateTaskStage(taskId, 'video-thumbnail')
+          this.logger.info(`[${taskId}:in-stage] video thumbnail upload`)
+          const thumbnailObject = await storageProvider.create(
+            `thumbnails/${photoId}.webp`,
+            thumbnailBuffer,
+            'image/webp',
+          )
+
+          const result: Photo = {
+            id: photoId,
+            title: path.basename(storageKey, path.extname(storageKey)),
+            description: null,
+            dateTaken: storageObject.lastModified?.toISOString() || new Date().toISOString(),
+            tags: null,
+            width: metadata.width,
+            height: metadata.height,
+            aspectRatio: metadata.width / metadata.height,
+            storageKey: storageKey,
+            thumbnailKey: thumbnailObject.key,
+            fileSize: storageObject.size || null,
+            lastModified: storageObject.lastModified?.toISOString() || new Date().toISOString(),
+            originalUrl: storageProvider.getPublicUrl(storageKey),
+            thumbnailUrl: storageProvider.getPublicUrl(thumbnailObject.key),
+            thumbnailHash: null,
+            exif: null,
+            latitude: null,
+            longitude: null,
+            country: null,
+            city: null,
+            locationName: null,
+            isLivePhoto: 0,
+            livePhotoVideoUrl: null,
+            livePhotoVideoKey: null,
+            isVideo: 1,
+            duration: metadata.duration,
+            videoCodec: metadata.videoCodec,
+            audioCodec: metadata.audioCodec || null,
+            bitrate: metadata.bitrate,
+            frameRate: metadata.frameRate,
+          }
+
+          const db = useDB()
+          await db.insert(tables.photos).values(result).onConflictDoUpdate({
+            target: tables.photos.id,
+            set: result,
+          })
+
+          if (payload.albumId) {
+            try {
+              const album = await db
+                .select()
+                .from(tables.albums)
+                .where(eq(tables.albums.id, payload.albumId))
+                .get()
+
+              if (album) {
+                const existingRelation = await db
+                  .select()
+                  .from(tables.albumPhotos)
+                  .where(
+                    sql`${tables.albumPhotos.albumId} = ${payload.albumId} AND ${tables.albumPhotos.photoId} = ${photoId}`,
+                  )
+                  .get()
+
+                if (!existingRelation) {
+                  await db
+                    .insert(tables.albumPhotos)
+                    .values({
+                      albumId: payload.albumId,
+                      photoId: photoId,
+                    })
+                    .run()
+
+                  this.logger.info(
+                    `Added video ${photoId} to album ${payload.albumId}`,
+                  )
+                }
+              }
+            } catch (error) {
+              this.logger.error(
+                `Failed to add video ${photoId} to album ${payload.albumId}:`,
+                error,
+              )
+            }
+          }
+
+          this.logger.success(`Video task ${taskId} processed successfully`)
+          return result
+        } catch (error) {
+          this.logger.error(`Video task ${taskId} processing failed`, error)
+          throw error
+        }
+      },
     }
   })()
 
@@ -705,6 +837,9 @@ export class QueueManager {
             break
           case 'photo':
             await this.processors.photo(task)
+            break
+          case 'video':
+            await this.processors.video(task)
             break
           case 'photo-reverse-geocoding':
             await this.processors.reverseGeocoding(task)

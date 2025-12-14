@@ -39,10 +39,39 @@ export class LocalStorageProvider implements StorageProvider {
   async create(key: string, fileBuffer: Buffer): Promise<StorageObject> {
     const { absFile, relKey } = this.resolveAbsoluteKey(key)
     await ensureDir(path.dirname(absFile))
-    // 原子写入：写到临时文件再重命名
+
     const tempFile = `${absFile}.tmp-${Date.now()}`
-    await fs.writeFile(tempFile, fileBuffer)
-    await fs.rename(tempFile, absFile)
+    let retries = 3
+
+    while (retries > 0) {
+      try {
+        await fs.writeFile(tempFile, fileBuffer)
+
+        try {
+          await fs.rename(tempFile, absFile)
+          break
+        } catch (renameErr) {
+          const error = renameErr as NodeJS.ErrnoException
+          if (error.code === 'EPERM' && retries > 1) {
+            await new Promise(resolve => setTimeout(resolve, 300))
+            retries--
+            continue
+          }
+
+          try {
+            await fs.unlink(tempFile)
+          } catch {}
+          throw renameErr
+        }
+      } catch (err) {
+        if (retries === 1) throw err
+        retries--
+        await new Promise(resolve => setTimeout(resolve, 300))
+      }
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 150))
+
     const stat = await fs.stat(absFile)
     this.logger?.success?.(`Saved file: ${absFile}`)
     return {
@@ -110,27 +139,42 @@ export class LocalStorageProvider implements StorageProvider {
   }
 
   async getFileMeta(key: string): Promise<StorageObject | null> {
+    const tryGetStat = async (filePath: string, retries = 3): Promise<any> => {
+      for (let i = 0; i < retries; i++) {
+        try {
+          return await fs.stat(filePath)
+        } catch (err) {
+          const error = err as NodeJS.ErrnoException
+          if (error.code === 'ENOENT') {
+            return null
+          }
+          if (error.code === 'EPERM' && i < retries - 1) {
+            // Windows 文件权限问题，等待后重试
+            await new Promise(resolve => setTimeout(resolve, 200 * (i + 1)))
+            continue
+          }
+          throw err
+        }
+      }
+      return null
+    }
+
     // First try with combined prefix
     const { absFile, relKey } = this.resolveAbsoluteKey(key)
-    try {
-      const stat = await fs.stat(absFile)
-      if (!stat.isFile()) return null
-      return { key: relKey, size: stat.size, lastModified: stat.mtime }
-    } catch (err) {
-      if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err
+    const stat1 = await tryGetStat(absFile)
+    if (stat1 && stat1.isFile()) {
+      return { key: relKey, size: stat1.size, lastModified: stat1.mtime }
     }
 
     // Fallback: try without adding prefix (in case key already contains it or was stored raw)
     const rawRel = sanitizeKey(key)
     const rawAbs = path.resolve(this.config.basePath, rawRel)
-    try {
-      const stat = await fs.stat(rawAbs)
-      if (!stat.isFile()) return null
-      return { key: rawRel, size: stat.size, lastModified: stat.mtime }
-    } catch (err) {
-      if ((err as NodeJS.ErrnoException).code === 'ENOENT') return null
-      throw err
+    const stat2 = await tryGetStat(rawAbs)
+    if (stat2 && stat2.isFile()) {
+      return { key: rawRel, size: stat2.size, lastModified: stat2.mtime }
     }
+
+    return null
   }
 }
 

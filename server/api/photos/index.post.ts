@@ -6,6 +6,15 @@ import { generateSafePhotoId } from '~~/server/utils/file-utils'
 const VIDEO_EXTENSIONS = new Set([
   '.mov',
   '.mp4',
+  '.avi',
+  '.mkv',
+  '.webm',
+  '.flv',
+  '.wmv',
+  '.m4v',
+  '.3gp',
+  '.mpeg',
+  '.mpg',
 ])
 
 const IMAGE_EXTENSIONS = new Set([

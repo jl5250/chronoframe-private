@@ -193,6 +193,28 @@ watch(isMobile, scrollToActiveThumbnail)
             class="w-6 h-6 text-gray-400"
           />
         </div>
+
+        <!-- 视频标识 -->
+        <div
+          v-if="photo.isVideo"
+          class="absolute bottom-1 right-1 bg-black/60 backdrop-blur-sm rounded-full p-1 flex items-center justify-center"
+        >
+          <Icon
+            name="tabler:player-play-filled"
+            class="w-3 h-3 text-white"
+          />
+        </div>
+
+        <!-- LivePhoto 标识 -->
+        <div
+          v-else-if="photo.isLivePhoto"
+          class="absolute top-1 left-1 bg-yellow-500/80 backdrop-blur-sm rounded-full p-0.5 flex items-center justify-center"
+        >
+          <Icon
+            name="tabler:live-photo"
+            class="w-3 h-3 text-white"
+          />
+        </div>
       </button>
     </div>
   </motion.div>

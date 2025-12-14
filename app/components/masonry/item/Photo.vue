@@ -357,16 +357,15 @@ const formatExposureTime = (
         if (!isNaN(numerator) && !isNaN(denominator) && denominator !== 0) {
           seconds = numerator / denominator
         } else {
-          return exposureTime // Return original if can't parse
+          return exposureTime
         }
       } else {
-        return exposureTime // Return original if format is unexpected
+        return exposureTime
       }
     } else {
-      // Try to parse as decimal
       seconds = parseFloat(exposureTime)
       if (isNaN(seconds)) {
-        return exposureTime // Return original if can't parse
+        return exposureTime
       }
     }
   } else {
@@ -375,12 +374,22 @@ const formatExposureTime = (
 
   // Convert to fraction format
   if (seconds >= 1) {
-    // For exposures 1 second or longer, show as decimal with "s"
     return `${seconds}s`
   } else {
-    // For fast exposures, convert to 1/x format
     const denominator = Math.round(1 / seconds)
     return `1/${denominator}`
+  }
+}
+
+const formatDuration = (duration: number): string => {
+  const hours = Math.floor(duration / 3600)
+  const minutes = Math.floor((duration % 3600) / 60)
+  const seconds = Math.floor(duration % 60)
+
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+  } else {
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`
   }
 }
 
@@ -508,6 +517,27 @@ onUnmounted(() => {
           @error="handleImageError"
         />
 
+        <!-- Video indicator for video files -->
+        <div
+          v-if="photo.isVideo"
+          class="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none"
+        >
+          <div class="w-16 h-16 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-sm">
+            <Icon
+              name="tabler:player-play-filled"
+              class="w-8 h-8 text-white ml-1"
+            />
+          </div>
+        </div>
+
+        <!-- Video duration badge -->
+        <div
+          v-if="photo.isVideo && photo.duration"
+          class="absolute bottom-2 right-2 px-2 py-1 bg-black/60 backdrop-blur-sm rounded text-white text-xs font-medium"
+        >
+          {{ formatDuration(photo.duration) }}
+        </div>
+
         <!-- LivePhoto video with enhanced motion transition -->
         <motion.video
           v-if="photo.isLivePhoto && videoBlobUrl"
@@ -536,7 +566,6 @@ onUnmounted(() => {
           @ended="handleVideoEnded"
           @loadeddata="
             () => {
-              // 视频加载完成后预热
               if (videoRef && !isVideoPlaying) {
                 videoRef.currentTime = 0.1
                 videoRef.pause()

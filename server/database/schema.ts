@@ -15,6 +15,10 @@ type PipelineQueuePayload =
       storageKey: string
     }
   | {
+      type: 'video'
+      storageKey: string
+    }
+  | {
       type: 'live-photo-video'
       storageKey: string
     }
@@ -62,6 +66,13 @@ export const photos = sqliteTable('photos', {
   isLivePhoto: integer('is_live_photo').default(0).notNull(),
   livePhotoVideoUrl: text('live_photo_video_url'),
   livePhotoVideoKey: text('live_photo_video_key'),
+  // 视频相关字段
+  isVideo: integer('is_video').default(0).notNull(),
+  duration: real('duration'),
+  videoCodec: text('video_codec'),
+  audioCodec: text('audio_codec'),
+  bitrate: integer('bitrate'),
+  frameRate: real('frame_rate'),
 })
 
 export const pipelineQueue = sqliteTable('pipeline_queue', {
@@ -95,6 +106,8 @@ export const pipelineQueue = sqliteTable('pipeline_queue', {
       'motion-photo',
       'reverse-geocoding',
       'live-photo',
+      'video-metadata',
+      'video-thumbnail',
     ],
   }),
   errorMessage: text('error_message'),

@@ -327,21 +327,42 @@ const uploadImage = async (file: File, existingFileId?: string) => {
         uploadingFiles.value = new Map(uploadingFiles.value)
 
         try {
-          // 检查是否为MOV视频文件（通过MIME类型或文件扩展名）
-          const isMovFile =
-            file.type === 'video/quicktime' ||
-            file.type === 'video/mp4' ||
-            file.name.toLowerCase().endsWith('.mov')
+          // MOV 格式可能是 LivePhoto，其他视频格式直接识别为视频
+          const isMovFile = file.type === 'video/quicktime' || file.name.toLowerCase().endsWith('.mov')
+
+          const otherVideoTypes = [
+            'video/mp4',
+            'video/x-msvideo',
+            'video/x-matroska',
+            'video/webm',
+            'video/x-flv',
+            'video/x-ms-wmv',
+            'video/3gpp',
+            'video/mpeg',
+          ]
+          const otherVideoExtensions = ['.mp4', '.avi', '.mkv', '.webm', '.flv', '.wmv', '.m4v', '.3gp', '.mpeg', '.mpg']
+
+          const isOtherVideoFile = otherVideoTypes.includes(file.type) ||
+            otherVideoExtensions.some(ext => file.name.toLowerCase().endsWith(ext))
+
+          let taskType = 'photo'
+          if (isOtherVideoFile) {
+            // 非 MOV 格式的视频直接识别为视频
+            taskType = 'video'
+          } else if (isMovFile) {
+            // MOV 格式识别为 LivePhoto 候选
+            taskType = 'live-photo-video'
+          }
 
           const resp = await $fetch('/api/queue/add-task', {
             method: 'POST',
             body: {
               payload: {
-                type: isMovFile ? 'live-photo-video' : 'photo',
+                type: taskType,
                 storageKey: signedUrlResponse.fileKey,
                 albumId: selectedAlbumId.value || undefined,
               },
-              priority: isMovFile ? 0 : 1, // Live Photo 视频优先级更低，确保图片优先处理
+              priority: taskType === 'video' ? 0 : (taskType === 'live-photo-video' ? 0 : 1),
               maxAttempts: 3,
             },
           })
@@ -642,7 +663,9 @@ const livePhotoStats = computed(() => {
   const livePhotos = filteredPhotos.value.filter(
     (photo: Photo) => photo.isLivePhoto,
   ).length
-  const staticPhotos = total - livePhotos
+  const staticPhotos = filteredPhotos.value.filter(
+    (photo: Photo) => !photo.isLivePhoto && !photo.isVideo,
+  ).length
 
   return { total, livePhotos, staticPhotos }
 })
@@ -656,7 +679,7 @@ const filteredData = computed(() => {
     case 'livephoto':
       return filteredPhotos.value.filter((photo: Photo) => photo.isLivePhoto)
     case 'static':
-      return filteredPhotos.value.filter((photo: Photo) => !photo.isLivePhoto)
+      return filteredPhotos.value.filter((photo: Photo) => !photo.isLivePhoto && !photo.isVideo)
     default:
       return filteredPhotos.value
   }
@@ -1192,22 +1215,42 @@ const columns: TableColumn<Photo>[] = [
 
 // 文件验证函数
 const validateFile = (file: File): { valid: boolean; error?: string } => {
-  // 检查文件类型
-  const allowedTypes = [
+  const allowedImageTypes = [
     'image/jpeg',
     'image/png',
     'image/heic',
     'image/heif',
-    'video/quicktime', // MOV 文件
+    'image/webp',
+    'image/gif',
+    'image/bmp',
+    'image/tiff',
   ]
 
-  const isValidImageType = allowedTypes.includes(file.type)
-  const isValidImageExtension = ['.heic', '.heif'].some((ext) =>
+  const allowedVideoTypes = [
+    'video/quicktime',
+    'video/mp4',
+    'video/x-msvideo',
+    'video/x-matroska',
+    'video/webm',
+    'video/x-flv',
+    'video/x-ms-wmv',
+    'video/3gpp',
+    'video/mpeg',
+  ]
+
+  const videoExtensions = ['.mov', '.mp4', '.avi', '.mkv', '.webm', '.flv', '.wmv', '.m4v', '.3gp', '.mpeg', '.mpg']
+  const imageExtensions = ['.heic', '.heif', '.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.tiff', '.tif']
+
+  const isValidImageType = allowedImageTypes.includes(file.type)
+  const isValidVideoType = allowedVideoTypes.includes(file.type)
+  const isValidImageExtension = imageExtensions.some((ext) =>
     file.name.toLowerCase().endsWith(ext),
   )
-  const isValidVideoExtension = file.name.toLowerCase().endsWith('.mov')
+  const isValidVideoExtension = videoExtensions.some((ext) =>
+    file.name.toLowerCase().endsWith(ext),
+  )
 
-  if (!isValidImageType && !isValidImageExtension && !isValidVideoExtension) {
+  if (!isValidImageType && !isValidVideoType && !isValidImageExtension && !isValidVideoExtension) {
     return {
       valid: false,
       error: $t('dashboard.photos.errors.unsupportedFormat', {
@@ -2293,7 +2336,7 @@ onUnmounted(() => {
                   icon="tabler:cloud-upload"
                   layout="grid"
                   size="xl"
-                  accept="image/jpeg,image/png,image/heic,image/heif,video/quicktime,.mov"
+                  accept="image/jpeg,image/png,image/heic,image/heif,image/webp,image/gif,image/bmp,image/tiff,video/quicktime,video/mp4,video/x-msvideo,video/x-matroska,video/webm,video/x-flv,video/x-ms-wmv,video/3gpp,video/mpeg,.mov,.mp4,.avi,.mkv,.webm,.flv,.wmv,.m4v,.3gp,.mpeg,.mpg,.heic,.heif"
                   multiple
                   highlight
                   dropzone

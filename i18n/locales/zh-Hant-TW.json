@@ -432,7 +432,7 @@
         "description": "支援 JPEG、PNG、HEIC 格式的照片，以及 MOV 格式的原況照片影片。每個檔案的最大大小：{maxSize}MB"
       },
       "toolbar": {
-        "title": "照片管理",
+        "title": "媒体管理",
         "filter": "篩選",
         "refresh": "重新整理"
       },

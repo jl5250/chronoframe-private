@@ -697,8 +697,19 @@ const swiperModules = [Navigation, Keyboard, Virtual]
                     @touchcancel="handleLivePhotoTouchEnd"
                     @contextmenu.prevent=""
                   >
-                    <!-- Main Image -->
+                    <!-- Video Player for standalone videos -->
+                    <VideoPlayer
+                      v-if="photo.isVideo && index === currentIndex"
+                      :src="photo.originalUrl!"
+                      :poster="photo.thumbnailUrl!"
+                      :controls="true"
+                      :autoplay="false"
+                      class="h-full w-full"
+                    />
+
+                    <!-- Main Image (only show for non-video items) -->
                     <ProgressiveImage
+                      v-if="!photo.isVideo"
                       class="h-full w-full object-contain transition-opacity duration-400"
                       :class="{
                         'opacity-0':
@@ -828,7 +839,10 @@ const swiperModules = [Navigation, Keyboard, Virtual]
                           damping: 20,
                           delay: 0.1,
                         }"
-                        class="absolute bottom-4 right-4 z-20"
+                        :class="[
+                          'absolute right-4 z-20',
+                          photo.isVideo ? 'bottom-20' : 'bottom-4'
+                        ]"
                       >
                         <div class="relative">
                           <!-- 表态选择器 -->
