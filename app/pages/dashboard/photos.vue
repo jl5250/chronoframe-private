@@ -40,7 +40,7 @@ const route = useRoute()
 const dayjs = useDayjs()
 
 const { status, refresh } = usePhotos()
-const { filteredPhotos, selectedCounts, hasActiveFilters, photoToAlbumsMap } = usePhotoFilters()
+const { filteredPhotos, selectedCounts, hasActiveFilters, photoToAlbumsMap, albums } = usePhotoFilters()
 
 const totalSelectedFilters = computed(() => {
   return Object.values(selectedCounts.value).reduce(
@@ -416,7 +416,6 @@ const isUploadSlideoverOpen = ref(false)
 // 相册选择相关状态
 const selectedAlbumId = ref<number | null>(null)
 const isUploadingPhotos = ref(false)
-const { data: albums } = await useFetch<Array<{ id: number; title: string; photoIds: string[] }>>('/api/albums')
 
 const albumOptions = computed(() => {
   if (!albums.value) return []
@@ -585,8 +584,8 @@ watch(isEditModalOpen, (open) => {
 const rowSelection = ref({})
 const table: any = useTemplateRef('table')
 
-// 列可见性状态
-const columnVisibility = ref({
+// 列可见性状态默认值
+const defaultColumnVisibility = {
   thumbnailUrl: true,
   id: true,
   actions: true,
@@ -601,7 +600,32 @@ const columnVisibility = ref({
   colorSpace: true,
   reactions: true,
   albums: true,
-})
+}
+
+// 从 localStorage 读取列可见性状态
+const loadColumnVisibility = () => {
+  if (import.meta.client) {
+    const saved = localStorage.getItem('photos-column-visibility')
+    if (saved) {
+      try {
+        return { ...defaultColumnVisibility, ...JSON.parse(saved) }
+      } catch (e) {
+        console.error('解析列设置失败:', e)
+      }
+    }
+  }
+  return defaultColumnVisibility
+}
+
+// 列可见性状态
+const columnVisibility = ref(loadColumnVisibility())
+
+// 监听列可见性变化并保存到 localStorage
+watch(columnVisibility, (newValue) => {
+  if (import.meta.client) {
+    localStorage.setItem('photos-column-visibility', JSON.stringify(newValue))
+  }
+}, { deep: true })
 
 const selectedRowsCount = computed((): number => {
   return table.value?.tableApi?.getFilteredSelectedRowModel().rows.length || 0
@@ -857,15 +881,35 @@ const columns: TableColumn<Photo>[] = [
     header: $t('dashboard.photos.table.columns.thumbnail.title'),
     cell: ({ row }) => {
       const url = row.original.thumbnailUrl
-      return h(ThumbImage, {
-        src: url || row.original.originalUrl || '',
-        alt: row.original.title || 'Photo Thumbnail',
-        key: row.original.id,
-        thumbhash: row.original.thumbnailHash || '',
-        class: 'size-16 min-w-[100px] object-cover rounded-md shadow',
-        onClick: () => openImagePreview(row.original),
-        style: { cursor: url ? 'pointer' : 'default' },
+      const photoId = row.original.id
+      const photoAlbums = photoToAlbumsMap.value.get(photoId)
+
+      const isInHiddenAlbum = photoAlbums?.some(albumId => {
+        const album = albums.value?.find(a => a.id === albumId)
+        return album?.isHidden === 1 || album?.isHidden === true
       })
+
+      return h('div', { class: 'relative inline-block size-16 min-w-[100px]' }, [
+        h(ThumbImage, {
+          src: url || row.original.originalUrl || '',
+          alt: row.original.title || 'Photo Thumbnail',
+          key: row.original.id,
+          thumbhash: row.original.thumbnailHash || '',
+          class: 'size-full object-cover rounded-md shadow',
+          onClick: () => openImagePreview(row.original),
+          style: { cursor: url ? 'pointer' : 'default' },
+        }),
+        isInHiddenAlbum ? h('div', {
+          class: 'absolute top-0.5 right-0.5 rounded-full p-0.5 flex items-center justify-center',
+          style: { backgroundColor: '#FBE7F1', width: '18px', height: '18px' }
+        }, [
+          h(Icon, {
+            name: 'tabler:eye-off',
+            class: 'w-3 h-3',
+            style: { color: '#F6339A' }
+          })
+        ]) : null
+      ])
     },
     enableHiding: false,
   },

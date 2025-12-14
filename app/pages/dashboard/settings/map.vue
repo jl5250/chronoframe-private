@@ -22,23 +22,35 @@ const {
 
 const visibleMapFields = computed(() => {
   const provider = mapState.provider
-  return mapFields.value.filter((field) => {
+  const filtered = mapFields.value.filter((field) => {
     if (!field.ui.visibleIf) return true
     if (field.ui.visibleIf.fieldKey === 'provider') {
       return field.ui.visibleIf.value === provider
     }
     return true
   })
+
+  return filtered.sort((a, b) => {
+    if (a.key === 'provider') return -1
+    if (b.key === 'provider') return 1
+    return 0
+  })
 })
 
 const visibleLocationFields = computed(() => {
   const provider = locationState.provider
-  return locationFields.value.filter((field) => {
+  const filtered = locationFields.value.filter((field) => {
     if (!field.ui.visibleIf) return true
     if (field.ui.visibleIf.fieldKey === 'provider') {
       return field.ui.visibleIf.value === provider
     }
     return true
+  })
+
+  return filtered.sort((a, b) => {
+    if (a.key === 'provider') return -1
+    if (b.key === 'provider') return 1
+    return 0
   })
 })
 
