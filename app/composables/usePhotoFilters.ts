@@ -332,6 +332,7 @@ export function usePhotoFilters() {
     selectedCounts,
     filteredPhotos,
     hasActiveFilters,
+    photoToAlbumsMap,
     toggleFilter,
     clearAllFilters,
     clearFilterType,

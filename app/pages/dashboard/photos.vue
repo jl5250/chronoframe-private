@@ -22,6 +22,7 @@ const columnNameMap: Record<string, string> = {
   fileSize: $t('dashboard.photos.table.columns.fileSize'),
   colorSpace: $t('dashboard.photos.table.columns.colorSpace'),
   reactions: $t('dashboard.photos.table.columns.reactions'),
+  albums: '相册',
   actions: $t('dashboard.photos.table.columns.actions'),
 }
 
@@ -39,7 +40,7 @@ const route = useRoute()
 const dayjs = useDayjs()
 
 const { status, refresh } = usePhotos()
-const { filteredPhotos, selectedCounts, hasActiveFilters } = usePhotoFilters()
+const { filteredPhotos, selectedCounts, hasActiveFilters, photoToAlbumsMap } = usePhotoFilters()
 
 const totalSelectedFilters = computed(() => {
   return Object.values(selectedCounts.value).reduce(
@@ -599,6 +600,7 @@ const columnVisibility = ref({
   fileSize: true,
   colorSpace: true,
   reactions: true,
+  albums: true,
 })
 
 const selectedRowsCount = computed((): number => {
@@ -1092,6 +1094,51 @@ const columns: TableColumn<Photo>[] = [
     },
   },
   {
+    accessorKey: 'albums',
+    header: '相册',
+    cell: ({ row }) => {
+      const photoId = row.original.id
+      const photoAlbums = photoToAlbumsMap.value.get(photoId)
+
+      if (!photoAlbums || photoAlbums.length === 0) {
+        return h(
+          'span',
+          { class: 'text-neutral-400 text-xs' },
+          '未添加到相册',
+        )
+      }
+
+      const albumNames = photoAlbums
+        .map(albumId => albums.value?.find(a => a.id === albumId)?.title)
+        .filter(Boolean)
+
+      return h('div', { class: 'flex items-center gap-1 flex-wrap' }, [
+        ...albumNames.slice(0, 2).map((name) =>
+          h(
+            UBadge,
+            {
+              size: 'sm',
+              variant: 'soft',
+              color: 'primary',
+            },
+            () => name,
+          ),
+        ),
+        albumNames.length > 2
+          ? h(
+              UBadge,
+              {
+                size: 'sm',
+                variant: 'soft',
+                color: 'neutral',
+              },
+              () => `+${albumNames.length - 2}`,
+            )
+          : null,
+      ].filter(Boolean))
+    },
+  },
+  {
     id: 'actions',
     accessorKey: 'actions',
     header: $t('dashboard.photos.table.columns.actions'),
@@ -1573,6 +1620,13 @@ const getRowActions = (photo: Photo) => {
         },
       },
       {
+        label: '添加到相册',
+        icon: 'tabler:folder-plus',
+        onSelect() {
+          openAddToAlbumsDialog(photo)
+        },
+      },
+      {
         label: $t('dashboard.photos.actions.reprocess'),
         icon: 'tabler:refresh',
         onSelect() {
@@ -1604,6 +1658,71 @@ const getRowActions = (photo: Photo) => {
       },
     ],
   ]
+}
+
+// 添加到相册对话框
+const isAddToAlbumsDialogOpen = ref(false)
+const targetPhoto = ref<Photo | null>(null)
+const selectedAlbumIds = ref<number[]>([])
+const isAddingToAlbums = ref(false)
+
+const openAddToAlbumsDialog = (photo: Photo) => {
+  targetPhoto.value = photo
+  const currentAlbums = photoToAlbumsMap.value.get(photo.id) || []
+  selectedAlbumIds.value = [...currentAlbums]
+  isAddToAlbumsDialogOpen.value = true
+}
+
+const handleAddToAlbums = async () => {
+  if (!targetPhoto.value || selectedAlbumIds.value.length === 0) {
+    toast.add({
+      title: '请至少选择一个相册',
+      color: 'warning',
+    })
+    return
+  }
+
+  isAddingToAlbums.value = true
+
+  try {
+    const photoId = targetPhoto.value.id
+    const currentAlbums = photoToAlbumsMap.value.get(photoId) || []
+
+    const albumsToAdd = selectedAlbumIds.value.filter(id => !currentAlbums.includes(id))
+    const albumsToRemove = currentAlbums.filter(id => !selectedAlbumIds.value.includes(id))
+
+    await Promise.all([
+      ...albumsToAdd.map(albumId =>
+        $fetch(`/api/albums/${albumId}/photos`, {
+          method: 'POST',
+          body: { photoIds: [photoId] },
+        })
+      ),
+      ...albumsToRemove.map(albumId =>
+        $fetch(`/api/albums/${albumId}/photos/${photoId}`, {
+          method: 'DELETE',
+        })
+      ),
+    ])
+
+    toast.add({
+      title: '添加成功',
+      description: `已将照片添加到 ${selectedAlbumIds.value.length} 个相册`,
+      color: 'success',
+    })
+
+    isAddToAlbumsDialogOpen.value = false
+    await refresh()
+  } catch (error) {
+    console.error('添加到相册失败:', error)
+    toast.add({
+      title: '添加失败',
+      description: '请稍后重试',
+      color: 'error',
+    })
+  } finally {
+    isAddingToAlbums.value = false
+  }
 }
 
 // 图片预览弹窗
@@ -2790,6 +2909,83 @@ onUnmounted(() => {
                   @click="confirmDelete"
                 >
                   {{ $t('dashboard.photos.delete.buttons.confirm') }}
+                </UButton>
+              </div>
+            </div>
+          </template>
+        </UModal>
+
+        <!-- 添加到相册对话框 -->
+        <UModal v-model:open="isAddToAlbumsDialogOpen">
+          <template #content>
+            <div class="p-6 space-y-4">
+              <div class="space-y-2">
+                <h3 class="text-lg font-semibold">添加到相册</h3>
+                <p class="text-sm text-neutral-600 dark:text-neutral-400">
+                  选择要添加此照片的相册（可多选）
+                </p>
+              </div>
+
+              <div class="space-y-2 max-h-96 overflow-y-auto">
+                <div
+                  v-for="album in albums"
+                  :key="album.id"
+                  class="flex items-center gap-3 p-3 rounded-lg border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-900 cursor-pointer transition-colors"
+                  @click="
+                    () => {
+                      const index = selectedAlbumIds.indexOf(album.id)
+                      if (index === -1) {
+                        selectedAlbumIds.push(album.id)
+                      } else {
+                        selectedAlbumIds.splice(index, 1)
+                      }
+                    }
+                  "
+                >
+                  <UCheckbox
+                    :model-value="selectedAlbumIds.includes(album.id)"
+                    @update:model-value="
+                      (value) => {
+                        const index = selectedAlbumIds.indexOf(album.id)
+                        if (value && index === -1) {
+                          selectedAlbumIds.push(album.id)
+                        } else if (!value && index !== -1) {
+                          selectedAlbumIds.splice(index, 1)
+                        }
+                      }
+                    "
+                  />
+                  <div class="flex-1">
+                    <div class="font-medium">{{ album.title }}</div>
+                    <div class="text-xs text-neutral-500">
+                      {{ album.photoIds.length }} 张照片
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  v-if="!albums || albums.length === 0"
+                  class="text-center py-8 text-neutral-400"
+                >
+                  暂无相册，请先创建相册
+                </div>
+              </div>
+
+              <div class="flex justify-end gap-2 pt-4 border-t border-neutral-200 dark:border-neutral-800">
+                <UButton
+                  variant="ghost"
+                  color="neutral"
+                  :disabled="isAddingToAlbums"
+                  @click="isAddToAlbumsDialogOpen = false"
+                >
+                  取消
+                </UButton>
+                <UButton
+                  icon="tabler:check"
+                  :loading="isAddingToAlbums"
+                  @click="handleAddToAlbums"
+                >
+                  确定
                 </UButton>
               </div>
             </div>
