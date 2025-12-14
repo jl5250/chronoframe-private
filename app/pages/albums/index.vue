@@ -345,25 +345,6 @@ const handleUploadComplete = async (photoIds: string[]) => {
                 >
                   上传
                 </UButton>
-                <UButton
-                  variant="soft"
-                  color="neutral"
-                  icon="tabler:edit"
-                  size="xs"
-                  :to="`/dashboard/albums/${album.id}`"
-                  @click.stop
-                >
-                  编辑
-                </UButton>
-                <UButton
-                  variant="soft"
-                  color="error"
-                  icon="tabler:trash"
-                  size="xs"
-                  @click="(e) => { e.preventDefault(); e.stopPropagation(); /* TODO: 添加删除功能 */ }"
-                >
-                  删除
-                </UButton>
               </div>
             </div>
           </div>

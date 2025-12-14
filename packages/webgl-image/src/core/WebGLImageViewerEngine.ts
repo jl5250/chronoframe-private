@@ -362,7 +362,7 @@ export class WebGLImageViewerEngine {
   }
 
   public async loadImage(src: string): Promise<void> {
-    console.log('Post load image:', src)
+    // console.log('Post load image:', src)
     this.emitLoadingStateChange(true, LoadingState.IMAGE_LOADING)
 
     return new Promise((resolve, reject) => {

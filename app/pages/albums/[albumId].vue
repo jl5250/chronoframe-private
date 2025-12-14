@@ -94,10 +94,12 @@ const MASONRY_GAP = 4
 const handleOpenViewer = (index: number) => {
   const photos = albumData.value?.photos
   if (photos && photos[index]) {
-    const { openViewer } = useViewerState()
-    const albumRoute = `/albums/${albumId.value}`
-    openViewer(0, albumRoute)
-    router.push(`/${photos[index].id}`)
+    // 跳转到照片详情页，并通过 query 参数传递相册 ID
+    // 动态路由页面会自动加载相册数据并打开查看器
+    router.push({
+      path: `/${photos[index].id}`,
+      query: { album: String(albumId.value) },
+    })
   }
 }
 
@@ -212,13 +214,22 @@ onBeforeMount(() => {
             :animate="{ opacity: 1, y: 0 }"
             :transition="{ duration: 0.4 }"
           >
-            <!-- title -->
-            <div>
+            <!-- title and upload button -->
+            <div class="flex items-start justify-between gap-4">
               <h1
                 class="text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-white tracking-tight"
               >
                 {{ albumData.title }}
               </h1>
+              <UButton
+                variant="soft"
+                color="primary"
+                icon="tabler:cloud-upload"
+                size="md"
+                @click="openUploadDialog"
+              >
+                上传照片
+              </UButton>
             </div>
 
             <!-- metadata -->
@@ -276,17 +287,6 @@ onBeforeMount(() => {
                     {{ $dayjs(albumData.createdAt).fromNow() }}
                   </span>
                 </div>
-
-                <!-- Upload Button -->
-                <UButton
-                  variant="soft"
-                  color="primary"
-                  icon="tabler:cloud-upload"
-                  size="sm"
-                  @click="openUploadDialog"
-                >
-                  上传照片
-                </UButton>
               </div>
             </div>
           </motion.div>
@@ -321,6 +321,7 @@ onBeforeMount(() => {
 
           <MasonryWall
             v-else
+            :key="`album-${albumId}-masonry`"
             :items="masonryItems"
             :column-width="columnWidth"
             :gap="MASONRY_GAP"

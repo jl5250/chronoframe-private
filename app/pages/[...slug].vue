@@ -9,14 +9,38 @@ const route = useRoute()
 const router = useRouter()
 
 const { switchToIndex, closeViewer, openViewer } = useViewerState()
-const { isViewerOpen } = storeToRefs(useViewerState())
+const { isViewerOpen, albumContext } = storeToRefs(useViewerState())
 
 const { photos } = usePhotos()
+
+// 从 URL 参数获取相册 ID
+const albumIdFromQuery = computed(() => route.query.album as string | undefined)
+
+// 如果 URL 中有相册 ID，加载相册数据
+const { data: albumData } = await useFetch(
+  () => albumIdFromQuery.value ? `/api/albums/${albumIdFromQuery.value}` : null,
+  {
+    watch: [albumIdFromQuery],
+  },
+)
+
+const displayPhotos = computed(() => {
+  // 优先使用 store 中的相册上下文
+  if (albumContext.value?.photos) {
+    return albumContext.value.photos
+  }
+  // 其次使用从 API 加载的相册照片
+  if (albumData.value?.photos) {
+    return albumData.value.photos
+  }
+  // 最后使用全局照片列表
+  return photos.value
+})
 
 const slug = computed(() => (route.params.slug as string[]) || [])
 const photoId = computed(() => slug.value[0] || null)
 const currentPhoto = computed(() =>
-  photos.value.find((photo) => photo.id === photoId.value),
+  displayPhotos.value.find((photo) => photo.id === photoId.value),
 )
 
 defineOgImageComponent('Photo', {
@@ -49,25 +73,61 @@ watch(
   { immediate: true },
 )
 
+// 避免循环依赖问题
+let isProcessing = false
+
 watch(
-  [photoId, photos],
-  ([currentPhotoId, currentPhotos]) => {
-    if (currentPhotoId && currentPhotos.length > 0) {
-      const foundIndex = currentPhotos.findIndex(
-        (photo) => photo.id === currentPhotoId,
-      )
-      if (foundIndex !== -1) {
-        useHead({
-          title: currentPhotos[foundIndex]?.title || $t('title.fallback.photo'),
-        })
-        if (!isViewerOpen.value) {
-          // 直接访问照片详情页时，不设置 returnRoute（传入 null）
-          openViewer(foundIndex, null)
-        } else {
-          switchToIndex(foundIndex)
+  [photoId, albumIdFromQuery, () => albumData.value?.photos, () => photos.value],
+  ([currentPhotoId, currentAlbumId, currentAlbumPhotos, allPhotos]) => {
+    if (isProcessing) {
+      return
+    }
+
+    if (currentPhotoId) {
+      // 确定使用哪个照片列表
+      let photosToUse: Photo[]
+      if (currentAlbumId && currentAlbumPhotos) {
+        photosToUse = currentAlbumPhotos
+      } else if (albumContext.value?.photos) {
+        photosToUse = albumContext.value.photos
+      } else {
+        photosToUse = allPhotos
+      }
+
+      if (photosToUse.length > 0) {
+        const foundIndex = photosToUse.findIndex(
+          (photo) => photo.id === currentPhotoId,
+        )
+        if (foundIndex !== -1) {
+          useHead({
+            title: photosToUse[foundIndex]?.title || $t('title.fallback.photo'),
+          })
+
+          if (!isViewerOpen.value) {
+            isProcessing = true
+
+            // 如果 URL 中有相册 ID，说明是从相册页面跳转过来的
+            if (currentAlbumId && currentAlbumPhotos) {
+              // 从相册跳转过来，设置相册上下文和返回路由
+              const albumRoute = `/albums/${currentAlbumId}`
+              openViewer(foundIndex, albumRoute, {
+                albumId: currentAlbumId,
+                photos: currentAlbumPhotos,
+              })
+            } else {
+              // 直接访问照片详情页，不设置相册上下文
+              openViewer(foundIndex, null)
+            }
+
+            nextTick(() => {
+              isProcessing = false
+            })
+          } else {
+            switchToIndex(foundIndex)
+          }
         }
       }
-    } else if (!currentPhotoId) {
+    } else {
       closeViewer()
       useHead({
         title: '',

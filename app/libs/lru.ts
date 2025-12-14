@@ -121,9 +121,9 @@ export class LRUCache<K, V> {
    * 记录缓存操作日志
    */
   private logCacheOperation(action: string, key: K): void {
-    console.info(
-      `LRU 缓存: ${action} ${String(key)}，当前大小: ${this.storage.size}/${this.capacity}`,
-    )
+    // console.info(
+    //   `LRU 缓存: ${action} ${String(key)}，当前大小: ${this.storage.size}/${this.capacity}`,
+    // )
   }
 }
 

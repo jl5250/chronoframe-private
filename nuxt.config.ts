@@ -245,6 +245,14 @@ export default defineNuxtConfig({
         name: '简体中文',
         file: 'zh-Hans.json',
         language: 'zh',
+        iso: 'zh-CN',
+      },
+      {
+        code: 'zh',
+        name: '简体中文',
+        file: 'zh-Hans.json',
+        language: 'zh',
+        iso: 'zh',
       },
       {
         code: 'zh-Hant-TW',

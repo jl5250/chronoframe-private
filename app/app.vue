@@ -25,12 +25,27 @@ const { data, refresh, status } = useFetch('/api/photos')
 const photos = computed(() => (data.value as Photo[]) || [])
 
 const { switchToIndex, closeViewer, clearReturnRoute } = useViewerState()
-const { currentPhotoIndex, isViewerOpen, returnRoute, isDirectAccess } =
+const { currentPhotoIndex, isViewerOpen, returnRoute, isDirectAccess, albumContext } =
   storeToRefs(useViewerState())
+
+const displayPhotos = computed(() => {
+  return albumContext.value?.photos || photos.value
+})
 
 const handleIndexChange = (newIndex: number) => {
   switchToIndex(newIndex)
-  router.replace(`/${photos.value[newIndex]?.id}`)
+  const photoId = displayPhotos.value[newIndex]?.id
+  if (photoId) {
+    // 如果有相册上下文，保持 URL 中的相册参数
+    if (albumContext.value?.albumId) {
+      router.replace({
+        path: `/${photoId}`,
+        query: { album: albumContext.value.albumId },
+      })
+    } else {
+      router.replace(`/${photoId}`)
+    }
+  }
 }
 
 const handleClose = () => {
@@ -90,7 +105,7 @@ provide(
       </NuxtLayout>
       <ClientOnly>
         <PhotoViewer
-          :photos="photos"
+          :photos="displayPhotos"
           :current-index="currentPhotoIndex"
           :is-open="isViewerOpen"
           @close="handleClose"
