@@ -71,6 +71,17 @@ const availableStorageColumns: TableColumn<SettingStorageProvider>[] = [
           {
             size: 'sm',
             variant: 'soft',
+            icon: 'tabler:pencil',
+            onClick: () =>
+              openEditStorageSlideover(cell.row.original as SettingStorageProvider),
+          },
+          { default: () => '编辑' },
+        ),
+        h(
+          UButton,
+          {
+            size: 'sm',
+            variant: 'soft',
             color: 'error',
             icon: 'tabler:trash',
             disabled:
@@ -121,6 +132,24 @@ const providerOptions = [
   { label: 'OpenList', value: 'openlist', icon: PROVIDER_ICON.openlist },
 ]
 
+const isEditStorageSlideoverOpen = ref(false)
+
+const editStorageState = reactive<{
+  id?: number
+  name: string
+  provider: string
+  config: Partial<StorageConfig>
+}>({
+  id: undefined,
+  name: '',
+  provider: 's3',
+  config: {
+    provider: 's3',
+    region: 'auto',
+    prefix: '/photos',
+  } as any,
+})
+
 const storageConfigState = reactive<{
   name: string
   provider: string
@@ -138,6 +167,19 @@ const storageConfigState = reactive<{
 // 根据 provider 值动态选择对应的 schema
 const currentStorageSchema = computed(() => {
   const provider = storageConfigState.provider
+  switch (provider) {
+    case 'local':
+      return localStorageConfigSchema
+    case 'openlist':
+      return openListStorageConfigSchema
+    case 's3':
+    default:
+      return s3StorageConfigSchema
+  }
+})
+
+const editStorageSchema = computed(() => {
+  const provider = editStorageState.provider
   switch (provider) {
     case 'local':
       return localStorageConfigSchema
@@ -176,9 +218,126 @@ const getStorageConfigDefaults = (provider: string): Partial<StorageConfig> => {
   }
 }
 
+watch(isEditStorageSlideoverOpen, (open) => {
+  if (open) return
+  editStorageState.id = undefined
+  editStorageState.name = ''
+  editStorageState.provider = 's3'
+  editStorageState.config = getStorageConfigDefaults('s3')
+})
+
 // 动态生成 fields-config，包含翻译键
 const storageFieldsConfig = computed<Record<string, any>>(() => {
   const provider = storageConfigState.provider
+  const baseKey = `settings.storage.${provider}`
+
+  switch (provider) {
+    case 'local':
+      return {
+        provider: { hidden: true },
+        basePath: {
+          label: $t(`${baseKey}.basePath.label`),
+          description: $t(`${baseKey}.basePath.description`),
+        },
+        baseUrl: {
+          label: $t(`${baseKey}.baseUrl.label`),
+          description: $t(`${baseKey}.baseUrl.description`),
+        },
+        prefix: {
+          label: $t(`${baseKey}.prefix.label`),
+          description: $t(`${baseKey}.prefix.description`),
+        },
+      }
+    case 'openlist':
+      return {
+        provider: { hidden: true },
+        baseUrl: {
+          label: $t(`${baseKey}.baseUrl.label`),
+          description: $t(`${baseKey}.baseUrl.description`),
+        },
+        rootPath: {
+          label: $t(`${baseKey}.rootPath.label`),
+          description: $t(`${baseKey}.rootPath.description`),
+        },
+        token: {
+          label: $t(`${baseKey}.token.label`),
+          description: $t(`${baseKey}.token.description`),
+        },
+        uploadEndpoint: {
+          label: $t(`${baseKey}.uploadEndpoint.label`),
+          description: $t(`${baseKey}.uploadEndpoint.description`),
+        },
+        downloadEndpoint: {
+          label: $t(`${baseKey}.downloadEndpoint.label`),
+          description: $t(`${baseKey}.downloadEndpoint.description`),
+        },
+        listEndpoint: {
+          label: $t(`${baseKey}.listEndpoint.label`),
+          description: $t(`${baseKey}.listEndpoint.description`),
+        },
+        deleteEndpoint: {
+          label: $t(`${baseKey}.deleteEndpoint.label`),
+          description: $t(`${baseKey}.deleteEndpoint.description`),
+        },
+        metaEndpoint: {
+          label: $t(`${baseKey}.metaEndpoint.label`),
+          description: $t(`${baseKey}.metaEndpoint.description`),
+        },
+        pathField: {
+          label: $t(`${baseKey}.pathField.label`),
+          description: $t(`${baseKey}.pathField.description`),
+        },
+        cdnUrl: {
+          label: $t(`${baseKey}.cdnUrl.label`),
+          description: $t(`${baseKey}.cdnUrl.description`),
+        },
+      }
+    case 's3':
+    default:
+      return {
+        provider: { hidden: true },
+        bucket: {
+          label: $t(`${baseKey}.bucket.label`),
+          description: $t(`${baseKey}.bucket.description`),
+        },
+        region: {
+          label: $t(`${baseKey}.region.label`),
+          description: $t(`${baseKey}.region.description`),
+        },
+        endpoint: {
+          label: $t(`${baseKey}.endpoint.label`),
+          description: $t(`${baseKey}.endpoint.description`),
+        },
+        prefix: {
+          label: $t(`${baseKey}.prefix.label`),
+          description: $t(`${baseKey}.prefix.description`),
+        },
+        cdnUrl: {
+          label: $t(`${baseKey}.cdnUrl.label`),
+          description: $t(`${baseKey}.cdnUrl.description`),
+        },
+        accessKeyId: {
+          label: $t(`${baseKey}.accessKeyId.label`),
+          description: $t(`${baseKey}.accessKeyId.description`),
+        },
+        secretAccessKey: {
+          label: $t(`${baseKey}.secretAccessKey.label`),
+          description: $t(`${baseKey}.secretAccessKey.description`),
+        },
+        forcePathStyle: {
+          label: $t(`${baseKey}.forcePathStyle.label`),
+          description: $t(`${baseKey}.forcePathStyle.description`),
+        },
+        maxKeys: {
+          label: $t(`${baseKey}.maxKeys.label`),
+          description: $t(`${baseKey}.maxKeys.description`),
+        },
+      }
+  }
+})
+
+const editStorageFieldsConfig = computed<Record<string, any>>(() => {
+  const provider = editStorageState.provider
   const baseKey = `settings.storage.${provider}`
 
   switch (provider) {
@@ -314,6 +473,58 @@ const onStorageConfigSubmit = async (
   } catch (error) {
     toast.add({
       title: '创建存储方案时出错',
+      description: (error as Error).message,
+      color: 'error',
+    })
+  }
+}
+
+const openEditStorageSlideover = (storage: SettingStorageProvider) => {
+  editStorageState.id = storage.id
+  editStorageState.name = storage.name
+  editStorageState.provider = storage.provider
+  editStorageState.config = JSON.parse(JSON.stringify(storage.config))
+  editStorageState.config.provider = storage.provider as any
+  isEditStorageSlideoverOpen.value = true
+}
+
+const onStorageUpdateSubmit = async (
+  event: { data: Partial<StorageConfig> },
+  close?: () => void,
+) => {
+  if (!editStorageState.id) return
+  if (!editStorageState.name?.trim()) {
+    toast.add({
+      title: '请填写存储名称',
+      color: 'error',
+    })
+    return
+  }
+
+  try {
+    const payload = {
+      name: editStorageState.name.trim(),
+      provider: editStorageState.provider,
+      config: {
+        ...event.data,
+        provider: editStorageState.provider,
+      },
+    }
+
+    await $fetch(`/api/system/settings/storage-config/${editStorageState.id}`, {
+      method: 'PUT',
+      body: payload,
+    })
+
+    await refreshAvailableStorage()
+    toast.add({
+      title: '存储方案已更新',
+      color: 'success',
+    })
+    close?.()
+  } catch (error) {
+    toast.add({
+      title: '更新存储方案失败',
       description: (error as Error).message,
       color: 'error',
     })
@@ -528,6 +739,73 @@ const onStorageDelete = async (storageId: number) => {
               :data="availableStorage"
             />
           </div>
+
+          <USlideover
+            v-model:open="isEditStorageSlideoverOpen"
+            title="编辑存储方案"
+            :ui="{ footer: 'justify-end' }"
+          >
+            <template #body="{ close }">
+              <div class="space-y-4">
+                <UFormField
+                  label="存储类型"
+                  class="w-full"
+                  :ui="{
+                    container: 'sm:max-w-full',
+                  }"
+                >
+                  <USelectMenu
+                    v-model="editStorageState.provider"
+                    :icon="
+                      PROVIDER_ICON[
+                        editStorageState.provider as keyof typeof PROVIDER_ICON
+                      ] || 'tabler:database'
+                    "
+                    :items="providerOptions"
+                    label-key="label"
+                    value-key="value"
+                    disabled
+                  />
+                </UFormField>
+
+                <UFormField
+                  label="存储名称"
+                  required
+                  :ui="{
+                    container: 'sm:max-w-full',
+                  }"
+                >
+                  <UInput v-model="editStorageState.name" />
+                </UFormField>
+
+                <USeparator />
+
+                <AutoForm
+                  id="editStorageForm"
+                  :schema="editStorageSchema"
+                  :state="editStorageState.config"
+                  :fields-config="editStorageFieldsConfig"
+                  @submit="onStorageUpdateSubmit($event, close)"
+                />
+              </div>
+            </template>
+
+            <template #footer="{ close }">
+              <UButton
+                label="取消"
+                color="neutral"
+                variant="outline"
+                @click="close"
+              />
+              <UButton
+                label="保存"
+                variant="soft"
+                icon="tabler:device-floppy"
+                type="submit"
+                form="editStorageForm"
+              />
+            </template>
+          </USlideover>
         </UCard>
       </div>
     </template>

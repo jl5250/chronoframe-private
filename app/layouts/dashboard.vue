@@ -56,7 +56,6 @@ const navItems = computed<NavigationMenuItem[][]>(() => [
           label: $t('title.systemSettings'),
           icon: 'tabler:cpu',
           to: '/dashboard/settings/system',
-          disabled: true,
         },
       ],
     },

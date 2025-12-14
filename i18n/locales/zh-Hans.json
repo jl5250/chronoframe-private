@@ -1085,6 +1085,78 @@
           "description": "用于访问图像的自定义 CDN URL"
         }
       }
+    },
+    "oauth": {
+      "github": {
+        "enabled": {
+          "label": "启用 GitHub OAuth",
+          "description": "允许用户使用 GitHub 账号登录"
+        },
+        "clientId": {
+          "label": "GitHub Client ID",
+          "description": "GitHub OAuth 应用的客户端 ID"
+        },
+        "clientSecret": {
+          "label": "GitHub Client Secret",
+          "description": "GitHub OAuth 应用的客户端密钥"
+        }
+      }
+    },
+    "analytics": {
+      "gtag": {
+        "id": {
+          "label": "Google Analytics ID",
+          "description": "Google Analytics 跟踪 ID（例如 G-XXXXXXX）"
+        }
+      },
+      "matomo": {
+        "enabled": {
+          "label": "启用 Matomo 分析",
+          "description": "启用 Matomo 网站分析统计"
+        },
+        "url": {
+          "label": "Matomo 实例 URL",
+          "description": "Matomo 服务器地址（例如 https://matomo.example.com）"
+        },
+        "siteId": {
+          "label": "Matomo 站点 ID",
+          "description": "Matomo 中配置的站点 ID"
+        }
+      }
+    },
+    "upload": {
+      "mime": {
+        "whitelistEnabled": {
+          "label": "启用 MIME 类型白名单",
+          "description": "启用后只允许上传指定类型的文件"
+        },
+        "whitelist": {
+          "label": "允许的 MIME 类型",
+          "description": "允许上传的文件类型列表，用逗号分隔"
+        }
+      },
+      "duplicateCheck": {
+        "enabled": {
+          "label": "启用重复文件检测",
+          "description": "上传时自动检测重复文件"
+        },
+        "mode": {
+          "label": "重复文件处理模式",
+          "description": "检测到重复文件时的处理方式"
+        }
+      }
+    },
+    "security": {
+      "allowInsecureCookie": {
+        "label": "允许不安全的 Cookie",
+        "description": "仅在开发环境使用，生产环境请勿启用"
+      }
+    },
+    "storage_provider": {
+      "provider": {
+        "label": "当前存储方案",
+        "description": "选择用于存储照片的存储方案"
+      }
     }
   },
   "wizard": {
