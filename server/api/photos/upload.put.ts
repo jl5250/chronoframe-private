@@ -73,8 +73,8 @@ export default eventHandler(async (event) => {
     })
   }
   
-  // 简单大小限制（例如 128MB）
-  const maxBytes = 128 * 1024 * 1024
+  // 简单大小限制（例如 512MB）
+  const maxBytes = 512 * 1024 * 1024
   if (raw.byteLength > maxBytes) {
     const sizeInMB = (raw.byteLength / 1024 / 1024).toFixed(2)
     throw createError({
@@ -83,13 +83,18 @@ export default eventHandler(async (event) => {
       data: {
         title: t('upload.error.tooLarge.title'),
         message: t('upload.error.tooLarge.message', { size: sizeInMB }),
-        suggestion: t('upload.error.tooLarge.suggestion', { maxSize: 128 }),
+        suggestion: t('upload.error.tooLarge.suggestion', { maxSize: 512 }),
       },
     })
   }
 
   try {
-    await storageProvider.create(normalizedKey, raw, contentType)
+    logger.chrono.info(`[upload] Starting file upload: ${normalizedKey}, size: ${raw.byteLength}`)
+    const result = await storageProvider.create(normalizedKey, raw, contentType, true)
+    logger.chrono.success(`[upload] File uploaded successfully: ${normalizedKey}, stored key: ${result.key}`)
+
+    const fileMeta = await storageProvider.getFileMeta(normalizedKey)
+    logger.chrono.info(`[upload] File verification: ${normalizedKey}, exists: ${!!fileMeta}`)
   } catch (error) {
     logger.chrono.error('Storage provider create error:', error)
     throw createError({
@@ -102,6 +107,6 @@ export default eventHandler(async (event) => {
     })
   }
 
-  return { ok: true, key }
+  return { ok: true, key, needsEncryption: true }
 })
 

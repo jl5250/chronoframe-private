@@ -13,10 +13,12 @@ type PipelineQueuePayload =
   | {
       type: 'photo'
       storageKey: string
+      albumId?: number
     }
   | {
       type: 'video'
       storageKey: string
+      albumId?: number
     }
   | {
       type: 'live-photo-video'
@@ -27,6 +29,10 @@ type PipelineQueuePayload =
       photoId: string
       latitude?: number | null
       longitude?: number | null
+    }
+  | {
+      type: 'file-encryption'
+      storageKey: string
     }
 
 export const users = sqliteTable('users', {
@@ -108,6 +114,7 @@ export const pipelineQueue = sqliteTable('pipeline_queue', {
       'live-photo',
       'video-metadata',
       'video-thumbnail',
+      'encrypting',
     ],
   }),
   errorMessage: text('error_message'),

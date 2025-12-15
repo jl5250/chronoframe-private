@@ -10,6 +10,10 @@ export default defineEventHandler(async (event) => {
         storageKey: z.string().nonempty(),
       }),
       z.object({
+        type: z.literal('video'),
+        storageKey: z.string().nonempty(),
+      }),
+      z.object({
         type: z.literal('live-photo-video'),
         storageKey: z.string().nonempty(),
       }),
@@ -18,6 +22,10 @@ export default defineEventHandler(async (event) => {
         photoId: z.string().min(1),
         latitude: z.number().min(-90).max(90).optional(),
         longitude: z.number().min(-180).max(180).optional(),
+      }),
+      z.object({
+        type: z.literal('file-encryption'),
+        storageKey: z.string().nonempty(),
       }),
     ])
 

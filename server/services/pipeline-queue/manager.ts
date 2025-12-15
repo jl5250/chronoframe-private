@@ -23,6 +23,13 @@ import { processVideoMetadata } from '../video/processor'
 import { getStorageManager } from '~~/server/plugins/3.storage'
 import { isStorageEncryptionEnabled, toFileProxyUrl } from '~~/server/utils/publicFile'
 
+class NonRetryableError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'NonRetryableError'
+  }
+}
+
 export class QueueManager {
   private static instances: Map<string, QueueManager> = new Map()
   private workerId: string
@@ -182,8 +189,9 @@ export class QueueManager {
    * 标记任务为失败
    * @param taskId 任务ID
    * @param errorMessage 错误信息
+   * @param isRetryable 是否可重试
    */
-  async markTaskFailed(taskId: number, errorMessage?: string): Promise<void> {
+  async markTaskFailed(taskId: number, errorMessage?: string, isRetryable: boolean = true): Promise<void> {
     const db = useDB()
     const task = await db
       .select()
@@ -194,9 +202,8 @@ export class QueueManager {
     if (!task) return
 
     const newAttempts = task.attempts + 1
-    const shouldRetry = newAttempts < task.maxAttempts
+    const shouldRetry = isRetryable && newAttempts < task.maxAttempts
 
-    // 计算重试延迟（指数退避）
     const retryDelay = shouldRetry
       ? Math.min(1000 * Math.pow(2, newAttempts - 1), 30000)
       : 0
@@ -207,7 +214,6 @@ export class QueueManager {
         status: shouldRetry ? 'pending' : 'failed',
         attempts: newAttempts,
         errorMessage: errorMessage || 'Unknown error',
-        // 如果重试，设置延迟重试时间
         ...(shouldRetry && retryDelay > 0
           ? {
               createdAt: new Date(Date.now() + retryDelay),
@@ -222,7 +228,7 @@ export class QueueManager {
       )
     } else {
       this.logger.error(
-        `Task ${taskId} failed permanently after ${newAttempts} attempts: ${errorMessage}`,
+        `Task ${taskId} failed permanently${!isRetryable ? ' (non-retryable error)' : ` after ${newAttempts} attempts`}: ${errorMessage}`,
       )
     }
   }
@@ -250,8 +256,10 @@ export class QueueManager {
           this.logger.info(`Start processing task ${taskId}: ${storageKey}`)
 
           let storageObject = await storageProvider.getFileMeta(storageKey)
-          if (!storageObject) {
-            // Fallback: try read the file directly to confirm existence (e.g., local provider)
+          let retries = 5
+
+          while (!storageObject && retries > 0) {
+            this.logger.info(`Photo file not found, checking again (retries left: ${retries}): ${storageKey}`)
             const maybeBuffer = await storageProvider.get(storageKey)
             if (maybeBuffer) {
               storageObject = {
@@ -259,11 +267,24 @@ export class QueueManager {
                 size: maybeBuffer.length,
                 lastModified: new Date(),
               }
+              break
+            }
+
+            if (retries > 1) {
+              await new Promise(resolve => setTimeout(resolve, 500))
+              retries--
+              storageObject = await storageProvider.getFileMeta(storageKey)
+            } else {
+              break
             }
           }
+
           if (!storageObject) {
-            throw new Error(`Storage object not found`)
+            this.logger.warn(`Photo file not found in storage after retries: ${storageKey}`)
+            throw new NonRetryableError(`Photo file not found: ${storageKey}`)
           }
+
+          this.logger.success(`Photo file found: ${storageKey}, size: ${storageObject.size}`)
 
           // STEP 1: 预处理 - 转换 HEIC 到 JPEG 并上传
           await this.updateTaskStage(taskId, 'preprocessing')
@@ -392,8 +413,7 @@ export class QueueManager {
             storageKey: storageKey,
             thumbnailKey: thumbnailObject.key,
             fileSize: storageObject.size || null,
-            lastModified:
-              storageObject.lastModified?.toISOString() ||
+            lastModified: storageObject.lastModified?.toISOString() ||
               new Date().toISOString(),
             originalUrl: imageBuffers.jpegKey
               ? toUrl(imageBuffers.jpegKey) // 使用 JPEG 版本作为 originalUrl
@@ -410,18 +430,21 @@ export class QueueManager {
             city: locationInfo?.city || null,
             locationName: locationInfo?.locationName || null,
             // LivePhoto 相关字段
-            isLivePhoto:
-              motionPhotoInfo?.isMotionPhoto || livePhotoInfo?.isLivePhoto
-                ? 1
-                : 0,
-            livePhotoVideoUrl:
-              motionPhotoInfo?.livePhotoVideoUrl ||
+            isLivePhoto: motionPhotoInfo?.isMotionPhoto || livePhotoInfo?.isLivePhoto
+              ? 1
+              : 0,
+            livePhotoVideoUrl: motionPhotoInfo?.livePhotoVideoUrl ||
               livePhotoInfo?.livePhotoVideoUrl ||
               null,
-            livePhotoVideoKey:
-              motionPhotoInfo?.livePhotoVideoKey ||
+            livePhotoVideoKey: motionPhotoInfo?.livePhotoVideoKey ||
               livePhotoInfo?.livePhotoVideoKey ||
               null,
+            duration: null,
+            isVideo: 0,
+            videoCodec: null,
+            audioCodec: null,
+            bitrate: null,
+            frameRate: null
           }
 
           const db = useDB()
@@ -622,7 +645,8 @@ export class QueueManager {
             }
           }
           if (!storageObject) {
-            throw new Error(`Storage object not found`)
+            this.logger.warn(`LivePhoto video file not found in storage: ${videoKey}`)
+            throw new NonRetryableError(`LivePhoto video file not found: ${videoKey}`)
           }
 
           // 寻找是否有同名的照片文件
@@ -685,6 +709,35 @@ export class QueueManager {
           throw error
         }
       },
+      fileEncryption: async (task: PipelineQueueItem) => {
+        const { id: taskId, payload } = task
+        if (payload.type !== 'file-encryption') {
+          throw new Error(
+            `Invalid payload type for file-encryption task: ${payload.type}`,
+          )
+        }
+        const { storageKey } = payload
+        const storageProvider = getStorageManager().getProvider()
+
+        try {
+          this.logger.info(`Start encrypting file task ${taskId}: ${storageKey}`)
+
+          await this.updateTaskStage(taskId, 'encrypting')
+          this.logger.info(`[${taskId}:in-stage] encrypting file`)
+
+          if (!storageProvider.encryptFile) {
+            this.logger.warn(`Storage provider does not support encryption`)
+            return
+          }
+
+          await storageProvider.encryptFile(storageKey)
+
+          this.logger.success(`File encryption task ${taskId} completed: ${storageKey}`)
+        } catch (error) {
+          this.logger.error(`File encryption task ${taskId} failed`, error)
+          throw error
+        }
+      },
       video: async (task: PipelineQueueItem) => {
         const { id: taskId, payload } = task
         if (payload.type !== 'video') {
@@ -705,7 +758,10 @@ export class QueueManager {
           this.logger.info(`Start processing video task ${taskId}: ${storageKey}`)
 
           let storageObject = await storageProvider.getFileMeta(storageKey)
-          if (!storageObject) {
+          let retries = 5
+
+          while (!storageObject && retries > 0) {
+            this.logger.info(`Video file not found, checking again (retries left: ${retries}): ${storageKey}`)
             const maybeBuffer = await storageProvider.get(storageKey)
             if (maybeBuffer) {
               storageObject = {
@@ -713,11 +769,24 @@ export class QueueManager {
                 size: maybeBuffer.length,
                 lastModified: new Date(),
               }
+              break
+            }
+
+            if (retries > 1) {
+              await new Promise(resolve => setTimeout(resolve, 500))
+              retries--
+              storageObject = await storageProvider.getFileMeta(storageKey)
+            } else {
+              break
             }
           }
+
           if (!storageObject) {
-            throw new Error(`Storage object not found`)
+            this.logger.warn(`Video file not found in storage after retries: ${storageKey}`)
+            throw new NonRetryableError(`Video file not found: ${storageKey}`)
           }
+
+          this.logger.success(`Video file found: ${storageKey}, size: ${storageObject.size}`)
 
           await this.updateTaskStage(taskId, 'video-metadata')
           this.logger.info(`[${taskId}:in-stage] video metadata extraction`)
@@ -858,6 +927,9 @@ export class QueueManager {
           case 'photo-reverse-geocoding':
             await this.processors.reverseGeocoding(task)
             break
+          case 'file-encryption':
+            await this.processors.fileEncryption(task)
+            break
           default:
             throw new Error(`Unknown task type: ${type}`)
         }
@@ -882,7 +954,8 @@ export class QueueManager {
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : String(error)
-        await this.markTaskFailed(task.id, errorMessage)
+        const isRetryable = !(error instanceof NonRetryableError)
+        await this.markTaskFailed(task.id, errorMessage, isRetryable)
         this.errorCount++
         this.logger.error(
           `[${this.workerId}] Task ${task.id} processing failed (Error: ${this.errorCount}):`,

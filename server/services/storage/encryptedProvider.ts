@@ -35,9 +35,10 @@ export class EncryptedStorageProvider implements StorageProvider {
     key: string,
     fileBuffer: Buffer,
     contentType?: string,
+    skipEncryption?: boolean,
   ): Promise<StorageObject> {
     const { encryptOnWrite, key: encryptionKey } = await getEncryptionSettings()
-    if (!encryptOnWrite) {
+    if (!encryptOnWrite || skipEncryption) {
       return await this.inner.create(key, fileBuffer, contentType)
     }
     if (!encryptionKey) {
@@ -49,6 +50,46 @@ export class EncryptedStorageProvider implements StorageProvider {
       : encryptBuffer(fileBuffer, encryptionKey)
 
     return await this.inner.create(key, payload, 'application/octet-stream')
+  }
+
+  async encryptFile(key: string): Promise<void> {
+    const { key: encryptionKey } = await getEncryptionSettings()
+    if (!encryptionKey) {
+      throw new Error('Encryption key is not set')
+    }
+
+    let fileBuffer: Buffer | null = null
+    let retries = 5
+
+    while (retries > 0) {
+      const fileMeta = await this.inner.getFileMeta(key)
+      logger.chrono.info(`[encryptFile] Checking file: ${key}, exists: ${!!fileMeta}, retries left: ${retries}`)
+
+      fileBuffer = await this.inner.get(key)
+      if (fileBuffer) {
+        logger.chrono.success(`[encryptFile] File found: ${key}, size: ${fileBuffer.length}`)
+        break
+      }
+
+      if (retries > 1) {
+        logger.chrono.warn(`[encryptFile] File not found, waiting 500ms before retry: ${key}`)
+        await new Promise(resolve => setTimeout(resolve, 500))
+        retries--
+      } else {
+        logger.chrono.error(`[encryptFile] File not found after all retries: ${key}`)
+        throw new Error(`File not found: ${key}`)
+      }
+    }
+
+    if (isEncryptedPayload(fileBuffer)) {
+      logger.chrono.info(`[encryptFile] File already encrypted, skipping: ${key}`)
+      return
+    }
+
+    logger.chrono.info(`[encryptFile] Starting encryption: ${key}`)
+    const encryptedPayload = encryptBuffer(fileBuffer, encryptionKey)
+    await this.inner.create(key, encryptedPayload, 'application/octet-stream')
+    logger.chrono.success(`[encryptFile] Encryption completed: ${key}`)
   }
 
   async delete(key: string): Promise<void> {

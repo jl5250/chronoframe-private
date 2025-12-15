@@ -281,6 +281,7 @@ const uploadImage = async (file: File, existingFileId?: string) => {
       },
     })
 
+    console.log('[upload] Signed URL response:', signedUrlResponse)
     uploadingFile.signedUrlResponse = signedUrlResponse
 
     // 检查是否为跳过模式（重复文件）
@@ -323,11 +324,10 @@ const uploadImage = async (file: File, existingFileId?: string) => {
         uploadingFile.status = 'processing'
         uploadingFile.progress = 100
         uploadingFile.canAbort = false
-        uploadingFile.stage = null // 重置 stage，准备显示任务状态
+        uploadingFile.stage = null
         uploadingFiles.value = new Map(uploadingFiles.value)
 
         try {
-          // MOV 格式可能是 LivePhoto，其他视频格式直接识别为视频
           const isMovFile = file.type === 'video/quicktime' || file.name.toLowerCase().endsWith('.mov')
 
           const otherVideoTypes = [
@@ -347,33 +347,49 @@ const uploadImage = async (file: File, existingFileId?: string) => {
 
           let taskType = 'photo'
           if (isOtherVideoFile) {
-            // 非 MOV 格式的视频直接识别为视频
             taskType = 'video'
           } else if (isMovFile) {
-            // MOV 格式识别为 LivePhoto 候选
             taskType = 'live-photo-video'
           }
 
-          const resp = await $fetch('/api/queue/add-task', {
+          const tasks = []
+
+          const encryptionEnabled = await $fetch('/api/settings/storage/encryption/enabled')
+          if (encryptionEnabled) {
+            tasks.push({
+              payload: {
+                type: 'file-encryption',
+                storageKey: signedUrlResponse.fileKey,
+              },
+              priority: 9,
+              maxAttempts: 3,
+            })
+          }
+
+          tasks.push({
+            payload: {
+              type: taskType,
+              storageKey: signedUrlResponse.fileKey,
+              albumId: selectedAlbumId.value || undefined,
+            },
+            priority: taskType === 'video' ? 0 : (taskType === 'live-photo-video' ? 0 : 1),
+            maxAttempts: 3,
+          })
+
+          const resp = await $fetch('/api/queue/add-tasks', {
             method: 'POST',
             body: {
-              payload: {
-                type: taskType,
-                storageKey: signedUrlResponse.fileKey,
-                albumId: selectedAlbumId.value || undefined,
-              },
-              priority: taskType === 'video' ? 0 : (taskType === 'live-photo-video' ? 0 : 1),
-              maxAttempts: 3,
+              tasks,
             },
           })
 
-          if (resp.success) {
-            uploadingFile.taskId = resp.taskId
+          if (resp.success && resp.results.length > 0) {
+            const processingTaskResult = resp.results[resp.results.length - 1]
+            uploadingFile.taskId = processingTaskResult.taskId
             uploadingFile.status = 'processing'
             uploadingFiles.value = new Map(uploadingFiles.value)
 
-            // 开始任务状态检查
-            startTaskStatusCheck(resp.taskId, fileId)
+            startTaskStatusCheck(processingTaskResult.taskId, fileId)
           } else {
             uploadingFile.status = 'error'
             uploadingFile.error = $t(

@@ -20,6 +20,7 @@ export interface StorageProvider {
     key: string,
     fileBuffer: Buffer,
     contentType?: string,
+    skipEncryption?: boolean,
   ): Promise<StorageObject>
   delete(key: string): Promise<void>
   get(key: string): Promise<Buffer | null>
@@ -32,4 +33,5 @@ export interface StorageProvider {
   getFileMeta(key: string): Promise<StorageObject | null>
   listAll(): Promise<StorageObject[]>
   listImages(): Promise<StorageObject[]>
+  encryptFile?(key: string): Promise<void>
 }
