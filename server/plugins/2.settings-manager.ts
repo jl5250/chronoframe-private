@@ -36,7 +36,7 @@ async function ensureDefaultStorageEncryptionKey() {
 
     const generated = crypto.randomBytes(32).toString('base64')
     await settingsManager.set('storage', 'encryption.key', generated, undefined, true)
-  } catch (error) {
+  } catch {
     // ignore
   }
 }

@@ -144,7 +144,7 @@ const openUploadDialog = (album: AlbumItem) => {
   isUploadDialogOpen.value = true
 }
 
-const handleUploadComplete = async (photoIds: string[]) => {
+const handleUploadComplete = async (_photoIds: string[]) => {
   await loadAlbums()
 }
 

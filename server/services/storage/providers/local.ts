@@ -60,7 +60,9 @@ export class LocalStorageProvider implements StorageProvider {
 
           try {
             await fs.unlink(tempFile)
-          } catch {}
+          } catch {
+            // ignore cleanup errors
+          }
           throw renameErr
         }
       } catch (err) {

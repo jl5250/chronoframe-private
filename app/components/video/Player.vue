@@ -12,10 +12,12 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  poster: undefined,
   autoplay: false,
   muted: false,
   loop: false,
   controls: true,
+  class: undefined,
 })
 
 const videoRef = ref<HTMLVideoElement>()

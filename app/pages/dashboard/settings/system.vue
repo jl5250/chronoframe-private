@@ -8,8 +8,6 @@ useHead({
   title: $t('title.systemSettings'),
 })
 
-const toast = useToast()
-
 const { fields: oauthFields, state: oauthState, submit: oauthSubmit, loading: oauthLoading } = useSettingsForm('oauth')
 const { fields: analyticsFields, state: analyticsState, submit: analyticsSubmit, loading: analyticsLoading } = useSettingsForm('analytics')
 const { fields: uploadFields, state: uploadState, submit: uploadSubmit, loading: uploadLoading } = useSettingsForm('upload')

@@ -2,9 +2,8 @@
 // WGS84（GPS坐标） -> GCJ02（高德/国测局坐标）
 
 const PI = Math.PI
-const X_PI = (PI * 3000.0) / 180.0
 const A = 6378245.0 // 长半轴
-const EE = 0.00669342162296594323 // 扁率
+const EE = 0.006693421622965943 // 扁率
 
 function transformLat(lng: number, lat: number): number {
   let ret =
