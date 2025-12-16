@@ -109,8 +109,8 @@ const handleLogin = () => {
     <p class="text-gray-500 text-center">
       {{
         !user?.isAdmin
-          ? 'Please login to view dashboard'
-          : 'Sorry, you do not have access to this page.'
+          ? '请登录以查看仪表板'
+          : '抱歉，您没有访问此页面的权限。'
       }}
     </p>
     <UButton @click="handleLogin">Sign In</UButton>

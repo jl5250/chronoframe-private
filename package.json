@@ -14,6 +14,7 @@
     "db:drop": "drizzle-kit drop",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "predev": "node scripts/migrate.mjs",
     "build": "nuxt build",
     "build:deps": "pnpm --filter @chronoframe/webgl-image build",
     "dev": "run-p dev:dep dev:wait-only",
