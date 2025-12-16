@@ -197,6 +197,7 @@ export const DEFAULT_SETTINGS = [
     key: 'upload.maxSizeMb',
     type: 'number',
     defaultValue: 512,
+    isPublic: true,
     label: 'settings.storage.upload.maxSizeMb.label',
     description: 'settings.storage.upload.maxSizeMb.description',
   },

@@ -17,6 +17,7 @@ useHead({
 })
 
 const toast = useToast()
+const settingsStore = useSettingsStore()
 
 const {
   fields: storageFields,
@@ -35,7 +36,9 @@ const storageEncryptionFields = computed(() => {
 })
 
 const storageUploadLimitField = computed(() => {
-  return storageFields.value.find((field) => field.key === 'upload.maxSizeMb')
+  return (
+    storageFields.value.find((field) => field.key === 'upload.maxSizeMb') ?? null
+  )
 })
 
 const handleStorageEncryptionSubmit = async () => {
@@ -55,6 +58,7 @@ const handleStorageUploadLimitSubmit = async () => {
     await storageSubmit({
       'upload.maxSizeMb': storageState['upload.maxSizeMb'],
     })
+    await settingsStore.refreshSettings()
   } catch {
     /* empty */
   }
@@ -611,12 +615,13 @@ const onStorageDelete = async (storageId: number) => {
             class="space-y-4"
             @submit="handleStorageUploadLimitSubmit"
           >
-            <SettingField
-              v-if="storageUploadLimitField"
-              :field="storageUploadLimitField"
-              :model-value="storageState[storageUploadLimitField.key]"
-              @update:model-value="(val) => (storageState[storageUploadLimitField.key] = val)"
-            />
+            <template v-if="storageUploadLimitField">
+              <SettingField
+                :field="storageUploadLimitField"
+                :model-value="storageState['upload.maxSizeMb']"
+                @update:model-value="(val) => (storageState['upload.maxSizeMb'] = val)"
+              />
+            </template>
           </UForm>
 
           <template #footer>

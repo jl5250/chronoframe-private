@@ -54,8 +54,16 @@ const emit = defineEmits<{
   'upload-complete': [photoIds: string[]]
 }>()
 
-const maxFileSizeMb = useSettingRef('storage:upload.maxSizeMb')
-const MAX_FILE_SIZE = computed(() => (maxFileSizeMb.value as number) || 256)
+const maxFileSizeMbSetting = useSettingRef('storage:upload.maxSizeMb')
+const MAX_FILE_SIZE = computed(() => {
+  const value = maxFileSizeMbSetting.value
+  if (typeof value === 'number') return value
+  if (typeof value === 'string') {
+    const parsed = Number(value)
+    if (Number.isFinite(parsed) && parsed > 0) return parsed
+  }
+  return 512
+})
 
 const dayjs = useDayjs()
 const toast = useToast()

@@ -1,6 +1,9 @@
 services:
   chronoframe:
-    image: ghcr.io/hoshinosuzumi/chronoframe:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: chronoframe:local
     container_name: chronoframe
     restart: unless-stopped
     ports:

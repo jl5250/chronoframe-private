@@ -34,8 +34,16 @@ useHead({
   title: $t('title.photos'),
 })
 
-const maxFileSizeMb = useSettingRef('storage:upload.maxSizeMb')
-const MAX_FILE_SIZE = computed(() => (maxFileSizeMb.value as number) || 256)
+const maxFileSizeMbSetting = useSettingRef('storage:upload.maxSizeMb')
+const MAX_FILE_SIZE = computed(() => {
+  const value = maxFileSizeMbSetting.value
+  if (typeof value === 'number') return value
+  if (typeof value === 'string') {
+    const parsed = Number(value)
+    if (Number.isFinite(parsed) && parsed > 0) return parsed
+  }
+  return 512
+})
 
 const route = useRoute()
 const dayjs = useDayjs()
@@ -576,7 +584,7 @@ watch(
 
     // 只有当文件数量变化或文件内容变化时才触发检查
     if (newFiles.length > 0) {
-      const maxSize = (MAX_FILE_SIZE.value as number) * 1024 * 1024
+      const maxSize = MAX_FILE_SIZE.value * 1024 * 1024
       const oversizedFiles = newFiles.filter((file) => file.size > maxSize)
 
       if (oversizedFiles.length > 0) {
@@ -1321,13 +1329,13 @@ const validateFile = (file: File): { valid: boolean; error?: string } => {
     }
   }
 
-  const maxSize = (MAX_FILE_SIZE.value as number) * 1024 * 1024
+  const maxSize = MAX_FILE_SIZE.value * 1024 * 1024
   if (file.size > maxSize) {
     return {
       valid: false,
       error: $t('dashboard.photos.errors.fileTooLarge', {
         size: (file.size / 1024 / 1024).toFixed(2),
-        maxSize: MAX_FILE_SIZE.value as number,
+        maxSize: MAX_FILE_SIZE.value,
       }),
     }
   }
@@ -1351,7 +1359,7 @@ const handleUpload = async () => {
     const skippedFiles: string[] = []
     const skippedPhotoIds: string[] = []
     const oversizedFiles: string[] = []
-    const maxSize = (MAX_FILE_SIZE.value as number) * 1024 * 1024
+    const maxSize = MAX_FILE_SIZE.value * 1024 * 1024
 
     for (const file of fileList) {
       const duplicateResult = duplicateCheckResults.value.get(file.name)

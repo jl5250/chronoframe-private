@@ -34,12 +34,15 @@
 
 ### Docker Compose（推荐）
 
-创建 `docker-compose.yml`：
+使用仓库自带 `docker-compose.yml`（默认本地构建镜像）：
 
 ```yaml
 services:
   chronoframe:
-    image: ghcr.io/hoshinosuzumi/chronoframe:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: chronoframe:local
     container_name: chronoframe
     restart: unless-stopped
     ports:
@@ -72,12 +75,31 @@ NUXT_SESSION_PASSWORD=your_32_char_random_string
 启动服务：
 
 ```bash
-docker-compose up -d
+docker compose up -d --build
 ```
 
 访问 `http://localhost:3000` 即可使用。
 
 > 完整配置项请参考原项目文档：https://chronoframe.bh8.ga/zh/guide/configuration.html
+
+### Docker（不使用 Compose）
+
+构建镜像：
+
+```bash
+docker build -t chronoframe:local .
+```
+
+使用构建的镜像创建并启动容器：
+
+```bash
+docker run -d --name chronoframe --restart unless-stopped -p 3000:3000 --env-file .env.test -v ./data:/app/data chronoframe:local
+
+
+
+docker run -d --name chronoframe --restart unless-stopped -p 3000:3000 --env-file .env -v ./data:/app/data chronoframe:local
+docker run -d --name chronoframe --restart unless-stopped -p 3000:3000  -v ./data:/app/data chronoframe:local
+```
 
 ## 🛠️ 本地开发
 
