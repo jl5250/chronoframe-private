@@ -94,7 +94,7 @@ export class WorkerPool {
     }
 
     this.logger.success(
-      `WorkerPool started successfully with ${this.workers.length} workers`,
+      `工作池已成功启动，包含 ${this.workers.length} 个工作进程`,
     )
   }
 
@@ -103,11 +103,11 @@ export class WorkerPool {
    */
   async stop(): Promise<void> {
     if (!this.isRunning) {
-      this.logger.warn('WorkerPool is not running')
+      this.logger.warn('工作池未运行')
       return
     }
 
-    this.logger.info('Stopping WorkerPool...')
+    this.logger.info('正在停止 WorkerPool...')
 
     // 停止统计报告
     if (this.statsInterval) {

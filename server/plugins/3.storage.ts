@@ -39,7 +39,7 @@ export default nitroPlugin(async (nitroApp) => {
   let storageConfiguration: StorageConfig
 
   if (!activeProvider) {
-    logger.storage.warn('No active storage provider configured, using default local storage')
+    logger.storage.warn('未配置活动的存储提供商，将使用默认的本地存储')
     storageConfiguration = {
       provider: 'local',
       basePath: path.resolve(process.cwd(), './data/storage'),
@@ -58,13 +58,13 @@ export default nitroPlugin(async (nitroApp) => {
     )
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
-    logger.storage.error(`Failed to initialize storage provider: ${errorMessage}`)
+    logger.storage.error(`初始化存储提供程序失败：${errorMessage}`)
 
     if (errorMessage.includes('accessKeyId') || errorMessage.includes('secretAccessKey')) {
       logger.storage.warn('S3 配置缺失必需的 accessKeyId 或 secretAccessKey，回退到本地存储')
     }
 
-    logger.storage.warn('Falling back to local storage due to configuration error')
+    logger.storage.warn('由于配置错误，回退到本地存储')
     storageConfiguration = {
       provider: 'local',
       basePath: path.resolve(process.cwd(), './data/storage'),
@@ -97,22 +97,22 @@ export default nitroPlugin(async (nitroApp) => {
     const localBase = storageConfiguration.basePath
     try {
       if (!path.isAbsolute(localBase)) {
-        logger.storage.warn(`LOCAL basePath is not absolute: ${localBase}`)
+        logger.storage.warn(`LOCAL basePath 不是绝对路径：${localBase}`)
       }
       await import('node:fs').then(async (m) => {
         const fs = m.promises as typeof import('node:fs').promises
         await fs.mkdir(localBase, { recursive: true })
       })
-      logger.storage.success(`Local storage ready at: ${localBase}`)
+      logger.storage.success(`本地存储已就绪，位于：${localBase}`)
     } catch (err) {
-      logger.storage.error('Failed to prepare local storage directory', err)
+      logger.storage.error('未能准备本地存储目录', err)
     }
   }
 
   // Setup event listeners for storage manager
   storageManager.on('provider-changed', async (event) => {
     logger.storage.info(
-      `Storage provider changed from ${event.oldProvider} to ${event.provider}`,
+      `存储提供商已从 ${event.oldProvider} 更改为 ${event.provider}`,
     )
 
     // Re-initialize local storage if switching to local provider
@@ -128,19 +128,19 @@ export default nitroPlugin(async (nitroApp) => {
             const fs = m.promises as typeof import('node:fs').promises
             await fs.mkdir(localBase, { recursive: true })
           })
-          logger.storage.success(`Local storage ready at: ${localBase}`)
+          logger.storage.success(`本地存储已准备就绪，位于：${localBase}`)
         }
       } catch (error) {
-        logger.storage.error('Failed to initialize local storage:', error)
+        logger.storage.error('无法初始化本地存储：', error)
       }
     }
   })
 
   storageManager.on('provider-error', (event) => {
     logger.storage.error(
-      `Storage provider error for ${event.provider}: ${event.error?.message}`,
+      `存储提供商 ${event.provider} 出错：${event.error?.message}`,
     )
   })
 
-  logger.storage.success('Storage plugin initialized successfully')
+  logger.storage.success('存储插件初始化成功')
 })

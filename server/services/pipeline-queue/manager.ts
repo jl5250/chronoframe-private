@@ -224,11 +224,11 @@ export class QueueManager {
 
     if (shouldRetry) {
       this.logger.warn(
-        `Task ${taskId} failed (attempt ${newAttempts}/${task.maxAttempts}), will retry in ${retryDelay}ms: ${errorMessage}`,
+        `任务 ${taskId} 失败（第 ${newAttempts} 次尝试，共 ${task.maxAttempts} 次），将在 ${retryDelay} 毫秒后重试：${errorMessage}`,
       )
     } else {
       this.logger.error(
-        `Task ${taskId} failed permanently${!isRetryable ? ' (non-retryable error)' : ` after ${newAttempts} attempts`}: ${errorMessage}`,
+        `任务 ${taskId} 永久失败${!isRetryable ? '（不可重试错误）' : ` 经过 ${newAttempts} 次尝试后`}：${errorMessage}`,
       )
     }
   }
@@ -240,7 +240,7 @@ export class QueueManager {
         const { id: taskId, payload } = task
         if (payload.type !== 'photo') {
           throw new Error(
-            `Invalid payload type for photo task: ${payload.type}`,
+            `照片任务的无效负载类型：${payload.type}`,
           )
         }
         const { storageKey } = payload
@@ -253,13 +253,13 @@ export class QueueManager {
         const photoId = generateSafePhotoId(storageKey)
 
         try {
-          this.logger.info(`Start processing task ${taskId}: ${storageKey}`)
+          this.logger.info(`开始处理任务 ${taskId}: ${storageKey}`)
 
           let storageObject = await storageProvider.getFileMeta(storageKey)
           let retries = 5
 
           while (!storageObject && retries > 0) {
-            this.logger.info(`Photo file not found, checking again (retries left: ${retries}): ${storageKey}`)
+            this.logger.info(`未在存储中找到照片文件，重试中（剩余重试次数：${retries}）：${storageKey}`)
             const maybeBuffer = await storageProvider.get(storageKey)
             if (maybeBuffer) {
               storageObject = {
@@ -280,15 +280,15 @@ export class QueueManager {
           }
 
           if (!storageObject) {
-            this.logger.warn(`Photo file not found in storage after retries: ${storageKey}`)
-            throw new NonRetryableError(`Photo file not found: ${storageKey}`)
+            this.logger.warn(`重试后未在存储中找到照片文件：${storageKey}`)
+            throw new NonRetryableError(`未在存储中找到照片文件：${storageKey}`)
           }
 
-          this.logger.success(`Photo file found: ${storageKey}, size: ${storageObject.size}`)
+          this.logger.success(`照片文件找到：${storageKey}，大小：${storageObject.size}`)
 
           // STEP 1: 预处理 - 转换 HEIC 到 JPEG 并上传
           await this.updateTaskStage(taskId, 'preprocessing')
-          this.logger.info(`[${taskId}:in-stage] preprocessing`)
+          this.logger.info(`[${taskId}:in-stage] 图片预处理`)
           const imageBuffers = await preprocessImageWithJpegUpload(storageKey)
           if (!imageBuffers) {
             throw new Error('Preprocessing failed')
@@ -296,7 +296,7 @@ export class QueueManager {
 
           // STEP 2: 元数据处理 - 使用 Sharp 处理图片元数据
           await this.updateTaskStage(taskId, 'metadata')
-          this.logger.info(`[${taskId}:in-stage] metadata extraction`)
+          this.logger.info(`[${taskId}:in-stage] 元数据提取`)
           const processedData = await processImageMetadataAndSharp(
             imageBuffers.processed,
             storageKey,
@@ -309,7 +309,7 @@ export class QueueManager {
 
           // STEP 3: 生成缩略图
           await this.updateTaskStage(taskId, 'thumbnail')
-          this.logger.info(`[${taskId}:in-stage] thumbnail generation`)
+          this.logger.info(`[${taskId}:in-stage] 缩略图生成`)
           const { thumbnailBuffer, thumbnailHash } =
             await generateThumbnailAndHash(imageBuffer, this.logger)
 
@@ -331,7 +331,7 @@ export class QueueManager {
 
           // STEP 4: 提取 EXIF 数据
           await this.updateTaskStage(taskId, 'exif')
-          this.logger.info(`[${taskId}:in-stage] exif extraction`)
+          this.logger.info(`[${taskId}:in-stage] EXIF 数据提取`)
           const exifData = await extractExifData(
             imageBuffer,
             imageBuffers.raw,
@@ -344,7 +344,7 @@ export class QueueManager {
           // STEP 5: 地理位置反向解析
           // 这里逆编码失败不报错，宽容处理
           await this.updateTaskStage(taskId, 'reverse-geocoding')
-          this.logger.info(`[${taskId}:in-stage] reverse geocoding`)
+          this.logger.info(`[${taskId}:in-stage] 地理位置反向解析`)
 
           let coordinates = null
           let locationInfo = null
@@ -358,7 +358,7 @@ export class QueueManager {
 
           // STEP 6: Motion Photo (XMP) 支持
           await this.updateTaskStage(taskId, 'motion-photo')
-          this.logger.info(`[${taskId}:in-stage] motion photo detection`)
+          this.logger.info(`[${taskId}:in-stage] Motion Photo 检测`)
           const motionPhotoInfo = imageBuffers.raw
             ? await processMotionPhotoFromXmp({
                 photoId,
@@ -372,13 +372,13 @@ export class QueueManager {
 
           if (!imageBuffers.raw) {
             this.logger.warn(
-              `[${taskId}:in-stage] motion photo detection skipped: missing raw buffer for ${storageKey}`,
+              `[${taskId}:in-stage] 检测 LivePhoto 视频跳过：${storageKey} 缺少原始缓冲区`,
             )
           }
 
           // STEP 7: LivePhoto 视频配对（独立 MOV 文件）
           await this.updateTaskStage(taskId, 'live-photo')
-          this.logger.info(`[${taskId}:in-stage] live photo detection`)
+          this.logger.info(`[${taskId}:in-stage] LivePhoto 视频检测`)
           let livePhotoInfo = null
           if (!motionPhotoInfo?.isMotionPhoto) {
             const livePhotoVideo = await findLivePhotoVideoForImage(storageKey)
@@ -389,7 +389,7 @@ export class QueueManager {
                 livePhotoVideoKey: livePhotoVideo.videoKey,
               }
               this.logger.info(
-                `[${taskId}:in-stage] found LivePhoto video: ${livePhotoVideo.videoKey}`,
+                `[${taskId}:in-stage] 找到 LivePhoto 视频: ${livePhotoVideo.videoKey}`,
               )
             }
           } else {
@@ -484,30 +484,30 @@ export class QueueManager {
                     .run()
 
                   this.logger.info(
-                    `Added photo ${photoId} to album ${payload.albumId}`,
+                    `添加照片 ${photoId} 到相册 ${payload.albumId} 成功`,
                   )
                 } else {
                   this.logger.debug(
-                    `Photo ${photoId} already in album ${payload.albumId}`,
+                    `照片 ${photoId} 已存在于相册 ${payload.albumId} 中`,
                   )
                 }
               } else {
                 this.logger.warn(
-                  `Album ${payload.albumId} not found, skipping album association`,
+                  `相册 ${payload.albumId} 未找到，跳过相册关联`,
                 )
               }
             } catch (error) {
               this.logger.error(
-                `Failed to add photo ${photoId} to album ${payload.albumId}:`,
+                `添加照片 ${photoId} 到相册 ${payload.albumId} 失败：`,
                 error,
               )
             }
           }
 
-          this.logger.success(`Task ${taskId} processed successfully`)
+          this.logger.success(`任务 ${taskId} 处理成功`)
           return result
         } catch (error) {
-          this.logger.error(`Task ${taskId} processing failed`, error)
+          this.logger.error(`任务 ${taskId} 处理失败`, error)
           throw error
         }
       },
@@ -517,7 +517,7 @@ export class QueueManager {
 
         if (payload.type !== 'photo-reverse-geocoding') {
           throw new Error(
-            `Invalid payload type for reverse geocoding task: ${payload.type}`,
+            `无效的负载类型 ${payload.type} 用于反向地理编码任务`,
           )
         }
 
@@ -526,7 +526,7 @@ export class QueueManager {
         try {
           await this.updateTaskStage(taskId, 'reverse-geocoding')
           this.logger.info(
-            `[${taskId}:in-stage] reverse geocoding for photo ${photoId}`,
+            `[${taskId}:in-stage] 为照片 ${photoId} 进行反向地理编码`,
           )
 
           const photo = await db
@@ -537,9 +537,9 @@ export class QueueManager {
 
           if (!photo) {
             this.logger.warn(
-              `[${taskId}:reverse-geocoding] photo ${photoId} not found`,
+              `[${taskId}:reverse-geocoding] 照片 ${photoId} 未找到`,
             )
-            throw new Error(`Photo ${photoId} not found`)
+            throw new Error(`照片 ${photoId} 未找到`)
           }
 
           let latitude = payload.latitude ?? photo.latitude ?? undefined
@@ -565,7 +565,7 @@ export class QueueManager {
 
           if (!hasLatitude || !hasLongitude) {
             this.logger.warn(
-              `[${taskId}:reverse-geocoding] missing coordinates for photo ${photoId}`,
+              `[${taskId}:reverse-geocoding] 照片 ${photoId} 缺少坐标`,
             )
             await db
               .update(tables.photos)
@@ -577,7 +577,7 @@ export class QueueManager {
                 locationName: null,
               })
               .where(eq(tables.photos.id, photoId))
-            throw new Error(`Missing coordinates for photo ${photoId}`)
+            throw new Error(`照片 ${photoId} 缺少坐标`)
           }
 
           const locationInfo = await extractLocationFromGPS(
@@ -586,7 +586,7 @@ export class QueueManager {
           )
 
           if (!locationInfo) {
-            throw new Error(`Failed to extract location from GPS coordinates (${latitude}, ${longitude}), maybe network issue?`)
+            throw new Error(`从 GPS 坐标 (${latitude}, ${longitude}) 提取位置信息失败，可能是网络问题？`)
           }
 
           await db
@@ -601,11 +601,11 @@ export class QueueManager {
             .where(eq(tables.photos.id, photoId))
 
           this.logger.success(
-            `[${taskId}:reverse-geocoding] updated location for photo ${photoId}`,
+            `[${taskId}:reverse-geocoding] 已更新照片 ${photoId} 的位置`,
           )
         } catch (error) {
           this.logger.error(
-            `[${taskId}:reverse-geocoding] failed for photo ${photoId}`,
+            `[${taskId}:reverse-geocoding] 为照片 ${photoId} 更新位置失败`,
             error,
           )
           throw error
@@ -623,14 +623,14 @@ export class QueueManager {
         const { id: taskId, payload } = task
         if (payload.type !== 'live-photo-video') {
           throw new Error(
-            `Invalid payload type for live-photo task: ${payload.type}`,
+            `live-photo照片任务的无效负载类型：${payload.type}`,
           )
         }
         const { storageKey: videoKey } = payload
 
         try {
           this.logger.info(
-            `Start processing LivePhoto detection task ${taskId}: ${videoKey}`,
+            `开始处理 LivePhoto 检测任务 ${taskId}: ${videoKey}`,
           )
 
           let storageObject = await storageProvider.getFileMeta(videoKey)
@@ -645,8 +645,8 @@ export class QueueManager {
             }
           }
           if (!storageObject) {
-            this.logger.warn(`LivePhoto video file not found in storage: ${videoKey}`)
-            throw new NonRetryableError(`LivePhoto video file not found: ${videoKey}`)
+            this.logger.warn(`LivePhoto 视频 ${videoKey} 不存在`)
+            throw new NonRetryableError(`LivePhoto 视频 ${videoKey} 不存在`)
           }
 
           // 寻找是否有同名的照片文件
@@ -673,7 +673,7 @@ export class QueueManager {
             if (photos.length > 0) {
               matchedPhoto = photos[0]
               this.logger.info(
-                `Found matching photo for LivePhoto video: ${photoKey}`,
+                `LivePhoto 视频 ${videoKey} 匹配照片 ${photoKey}`,
               )
               break
             }
@@ -681,10 +681,10 @@ export class QueueManager {
 
           if (!matchedPhoto) {
             this.logger.warn(
-              `No matching photo found for LivePhoto video: ${videoKey}`,
+              `LivePhoto 视频 ${videoKey} 没有匹配的照片`,
             )
             throw new Error(
-              `No matching photo found for LivePhoto video: ${videoKey}`,
+              `LivePhoto 视频 ${videoKey} 没有匹配的照片`,
             )
           }
 
@@ -699,11 +699,11 @@ export class QueueManager {
             .where(eq(tables.photos.id, matchedPhoto.id))
 
           this.logger.success(
-            `LivePhoto detection task ${taskId} processed successfully, updated photo ${matchedPhoto.id}`,
+            `LivePhoto 检测任务 ${taskId} 成功，更新照片 ${matchedPhoto.id}`,
           )
         } catch (error) {
           this.logger.error(
-            `LivePhoto detection task ${taskId} processing failed`,
+            `LivePhoto 检测任务 ${taskId} 处理失败`,
             error,
           )
           throw error
@@ -713,28 +713,28 @@ export class QueueManager {
         const { id: taskId, payload } = task
         if (payload.type !== 'file-encryption') {
           throw new Error(
-            `Invalid payload type for file-encryption task: ${payload.type}`,
+            `无效的任务有效载荷类型：${payload.type}，文件加密任务需要 'file-encryption' 类型`
           )
         }
         const { storageKey } = payload
         const storageProvider = getStorageManager().getProvider()
 
         try {
-          this.logger.info(`Start encrypting file task ${taskId}: ${storageKey}`)
+          this.logger.info(`开始加密文件任务 ${taskId}：${storageKey}`)
 
           await this.updateTaskStage(taskId, 'encrypting')
           this.logger.info(`[${taskId}:in-stage] encrypting file`)
 
           if (!storageProvider.encryptFile) {
-            this.logger.warn(`Storage provider does not support encryption`)
+            this.logger.warn(`存储提供程序不支持加密`)
             return
           }
 
           await storageProvider.encryptFile(storageKey)
 
-          this.logger.success(`File encryption task ${taskId} completed: ${storageKey}`)
+          this.logger.success(`文件加密任务 ${taskId} 成功: ${storageKey}`)
         } catch (error) {
-          this.logger.error(`File encryption task ${taskId} failed`, error)
+          this.logger.error(`文件加密任务 ${taskId} 失败`, error)
           throw error
         }
       },
@@ -742,7 +742,7 @@ export class QueueManager {
         const { id: taskId, payload } = task
         if (payload.type !== 'video') {
           throw new Error(
-            `Invalid payload type for video task: ${payload.type}`,
+            `无效的任务有效载荷类型：${payload.type}，视频任务需要 'video' 类型`
           )
         }
         const { storageKey } = payload
@@ -755,13 +755,13 @@ export class QueueManager {
         const photoId = generateSafePhotoId(storageKey)
 
         try {
-          this.logger.info(`Start processing video task ${taskId}: ${storageKey}`)
+          this.logger.info(`开始处理视频任务 ${taskId}: ${storageKey}`)
 
           let storageObject = await storageProvider.getFileMeta(storageKey)
           let retries = 5
 
           while (!storageObject && retries > 0) {
-            this.logger.info(`Video file not found, checking again (retries left: ${retries}): ${storageKey}`)
+            this.logger.info(`未在存储中找到视频文件，检查中（剩余重试次数：${retries}）：${storageKey}`)
             const maybeBuffer = await storageProvider.get(storageKey)
             if (maybeBuffer) {
               storageObject = {
@@ -782,23 +782,23 @@ export class QueueManager {
           }
 
           if (!storageObject) {
-            this.logger.warn(`Video file not found in storage after retries: ${storageKey}`)
-            throw new NonRetryableError(`Video file not found: ${storageKey}`)
+            this.logger.warn(`重试后未在存储中找到视频文件：${storageKey}`)
+            throw new NonRetryableError(`未找到视频文件：${storageKey}`)
           }
 
           this.logger.success(`Video file found: ${storageKey}, size: ${storageObject.size}`)
 
           await this.updateTaskStage(taskId, 'video-metadata')
-          this.logger.info(`[${taskId}:in-stage] video metadata extraction`)
+          this.logger.info(`[${taskId}:in-stage] 视频元数据提取`)
           const processedData = await processVideoMetadata(storageKey)
           if (!processedData) {
-            throw new Error('Video metadata processing failed')
+            throw new Error('视频元数据处理失败')
           }
 
           const { metadata, thumbnailBuffer } = processedData
 
           await this.updateTaskStage(taskId, 'video-thumbnail')
-          this.logger.info(`[${taskId}:in-stage] video thumbnail upload`)
+          this.logger.info(`[${taskId}:in-stage] 视频缩略图上传`)
           const thumbnailObject = await storageProvider.create(
             `thumbnails/${photoId}.webp`,
             thumbnailBuffer,
@@ -871,22 +871,22 @@ export class QueueManager {
                     .run()
 
                   this.logger.info(
-                    `Added video ${photoId} to album ${payload.albumId}`,
+                    `[${this.workerId}] 视频 ${photoId} 已添加到相册 ${payload.albumId}`,
                   )
                 }
               }
             } catch (error) {
               this.logger.error(
-                `Failed to add video ${photoId} to album ${payload.albumId}:`,
+                `[${this.workerId}] 处理视频 ${photoId} 时添加到相册 ${payload.albumId} 失败：`,
                 error,
               )
             }
           }
 
-          this.logger.success(`Video task ${taskId} processed successfully`)
+          this.logger.success(`[${this.workerId}] 任务 ${taskId} 处理成功`)
           return result
         } catch (error) {
-          this.logger.error(`Video task ${taskId} processing failed`, error)
+          this.logger.error(`[${this.workerId}] 任务 ${taskId} 处理失败`, error)
           throw error
         }
       },
@@ -898,7 +898,7 @@ export class QueueManager {
    */
   private async processNextTask(): Promise<void> {
     if (this.isProcessing) {
-      this.logger.debug('Task is already processing, skipping this poll')
+      this.logger.debug('任务正在处理中，跳过此轮询')
       return
     }
 
@@ -907,7 +907,7 @@ export class QueueManager {
     try {
       const task = await this.getNextTask()
       if (!task) {
-        this.logger.debug('No tasks to process at the moment')
+        this.logger.debug('当前没有待处理任务')
         return
       }
 
@@ -937,7 +937,7 @@ export class QueueManager {
         await this.markTaskCompleted(task.id)
         this.processedCount++
         this.logger.success(
-          `[${this.workerId}] Task ${task.id} processed successfully (Total: ${this.processedCount})`,
+          `[${this.workerId}] 任务 ${task.id} 处理成功（总计：${this.processedCount}）`,
         )
 
         // const result = await this.processTask(task)
@@ -958,12 +958,12 @@ export class QueueManager {
         await this.markTaskFailed(task.id, errorMessage, isRetryable)
         this.errorCount++
         this.logger.error(
-          `[${this.workerId}] Task ${task.id} processing failed (Error: ${this.errorCount}):`,
+          `[${this.workerId}] 任务 ${task.id} 处理失败（错误：${this.errorCount}）：`,
           errorMessage,
         )
       }
     } catch (error) {
-      this.logger.error('Error occurred while fetching the next task:', error)
+      this.logger.error('获取下一个任务时发生错误：', error)
     } finally {
       this.isProcessing = false
     }
@@ -978,16 +978,16 @@ export class QueueManager {
 
     this.processingInterval = setInterval(() => {
       this.processNextTask().catch((error) => {
-        this.logger.error('Error occurred while processing the queue:', error)
+        this.logger.error('处理队列时发生错误：', error)
       })
     }, intervalMs)
 
     this.logger.success(
-      `Queue processing started with interval: ${intervalMs}ms`,
+      `队列处理已启动，间隔为：${intervalMs}毫秒`,
     )
 
     this.processNextTask().catch((error) => {
-      this.logger.error('Error occurred while processing the queue:', error)
+      this.logger.error('处理队列时发生错误：', error)
     })
   }
 
