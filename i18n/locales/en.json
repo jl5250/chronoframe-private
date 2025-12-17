@@ -109,6 +109,21 @@
       },
       "backtotop": {
         "tooltip": "Back to Top"
+      },
+      "backToTop": {
+        "tooltip": "Back to top"
+      },
+      "encryption": {
+        "enabled": {
+          "description": "Uploaded and generated thumbnails will be saved in encrypted form in the storage plan",
+          "help": "After opening, the encrypted data is saved in the storage, which is automatically decrypted and presented by the system during front-end access.",
+          "label": "Enable storage encryption"
+        },
+        "key": {
+          "description": "Key used to encrypt/decrypt stored data",
+          "help": "It is recommended to use a random 32-byte key (hex/base64), do not lose it, otherwise the saved file cannot be decrypted",
+          "label": "encryption key"
+        }
       }
     },
     "stats": {
@@ -345,6 +360,22 @@
         "iccProfile": "ICC Profile",
         "uncalibrated": "Uncalibrated",
         "rgb": "RGB"
+      },
+      "encryption": {
+        "enabled": {
+          "description": "Encrypt files before storing them in the configured provider",
+          "help": "When enabled, uploads and generated thumbnails are stored encrypted; the app will decrypt when serving to users",
+          "label": "Encrypt Storage",
+          "options": {
+            "off": "Off",
+            "on": "On"
+          }
+        },
+        "key": {
+          "description": "Key used to encrypt/decrypt stored files",
+          "help": "Use a random 32-byte key (hex/base64) and keep it safe; changing it will make old encrypted files unreadable",
+          "label": "Encryption Key"
+        }
       }
     }
   },
@@ -364,13 +395,15 @@
     "location": "Location services",
     "generalSettings": "General Settings",
     "appearanceSettings": "Appearance Settings",
-    "mapAndLocation": "Map & Location"
+    "mapAndLocation": "Map & Location",
+    "storageSettings": "Storage Settings",
+    "systemSettings": "System Settings"
   },
   "auth": {
     "form": {
       "errors": {
         "invalidEmail": "Invalid email address",
-        "invalidPassword": ""
+        "invalidPassword": "Password needs to be at least 6 characters"
       },
       "signin": {
         "title": "Sign In",
@@ -419,7 +452,7 @@
         "recentlyYear": "Past year"
       },
       "tooltip": {
-        "data": "{0} took {1} photos",
+        "data": "{0}Photos {1}",
         "noData": "{0} has no photos"
       }
     }
@@ -691,7 +724,9 @@
         "selectPhotos": "Select Photos",
         "editPhotos": "Edit photo selection",
         "selectedCount": "Selected {count} photos",
-        "clearAll": "Clear all"
+        "clearAll": "Clear all",
+        "isHiddenHelp": "Hidden albums are only visible to logged-in users, and photos in the albums will not be displayed on the homepage.",
+        "isHidden": "Hidden Album"
       },
       "table": {
         "columns": {
@@ -1199,14 +1234,28 @@
           "on": "On"
         }
       }
+    },
+    "storage_provider": {
+      "provider": {
+        "label": "Current storage solution",
+        "description": "Select the storage plan for storing photos"
+      }
     }
   },
   "wizard": {
     "admin": {
-      "username": { "label": "Username" },
-      "email": { "label": "Email" },
-      "password": { "label": "Password" },
-      "confirmPassword": { "label": "Confirm Password" }
+      "username": {
+        "label": "Username"
+      },
+      "email": {
+        "label": "Email"
+      },
+      "password": {
+        "label": "Password"
+      },
+      "confirmPassword": {
+        "label": "Confirm Password"
+      }
     },
     "map": {
       "provider": {

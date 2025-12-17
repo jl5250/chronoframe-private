@@ -109,6 +109,21 @@
       },
       "backtotop": {
         "tooltip": "ページの先頭に戻る"
+      },
+      "backToTop": {
+        "tooltip": "ページの先頭へ戻る"
+      },
+      "encryption": {
+        "enabled": {
+          "description": "アップロードおよび生成されたサムネイルは、暗号化された形式でストレージ プランに保存されます。",
+          "help": "開いた後、暗号化されたデータはストレージに保存され、フロントエンド アクセス中にシステムによって自動的に復号化されて表示されます。",
+          "label": "ストレージ暗号化を有効にする"
+        },
+        "key": {
+          "description": "保存されたデータの暗号化/復号化に使用されるキー",
+          "help": "ランダムな 32 バイト キー (hex/base64) を使用することをお勧めします。紛失しないようにしてください。紛失しないと、保存されたファイルを復号化できません。",
+          "label": "暗号化キー"
+        }
       }
     },
     "stats": {
@@ -120,7 +135,8 @@
       "noImage": "空のアルバム",
       "emptyAlbumTip": "写真を追加して開始しましょう",
       "noDescription": "説明がありません"
-    }
+    },
+    "indexPanelCountCity": "{count} 都市を待っています"
   },
   "album": {
     "notFound": "アルバムが見つかりません",
@@ -347,17 +363,17 @@
       },
       "encryption": {
         "enabled": {
-          "label": "Encrypt Storage",
-          "description": "Encrypt files before storing them in the configured provider",
-          "help": "When enabled, uploads and generated thumbnails are stored encrypted; the app will decrypt when serving to users",
+          "label": "ストレージの暗号化",
+          "description": "構成されたプロバイダーに保存する前にファイルを暗号化します",
+          "help": "有効にすると、アップロードされたファイルや生成されたサムネイルは暗号化されて保存され、ユーザーに提供する際にアプリが復号します",
           "options": {
-            "off": "Off",
-            "on": "On"
+            "off": "オフ",
+            "on": "オン"
           }
         },
         "key": {
-          "label": "Encryption Key",
-          "description": "Key used to encrypt/decrypt stored files",
+          "label": "暗号化キー",
+          "description": "格納されたファイルを暗号化/復号化するために使用されるキー",
           "help": "Use a random 32-byte key (hex/base64) and keep it safe; changing it will make old encrypted files unreadable"
         }
       }
@@ -379,7 +395,9 @@
     "generalSettings": "一般設定",
     "appearanceSettings": "外観設定",
     "mapAndLocation": "地図と場所",
-    "location": "位置情報サービス"
+    "location": "位置情報サービス",
+    "storageSettings": "設定を保存する",
+    "systemSettings": "システム設定"
   },
   "auth": {
     "form": {
@@ -389,11 +407,16 @@
       },
       "action": {
         "or": "または",
-        "continue": "続く"
+        "continue": "続く",
+        "backToHome": "ホームページに戻る"
       },
       "labels": {
         "email": "メール",
         "password": "パスワード"
+      },
+      "errors": {
+        "invalidEmail": "無効なメールアドレス",
+        "invalidPassword": "パスワードは6文字以上である必要があります"
       }
     }
   },
@@ -428,10 +451,11 @@
         "recentlyYear": "直近1年"
       },
       "tooltip": {
-        "data": "{0}が{1}枚の写真を撮影しました",
+        "data": "{0}写真{1}",
         "noData": "{0}は写真がありません"
       }
-    }
+    },
+    "unknown": "未知"
   },
   "dashboard": {
     "photos": {
@@ -650,7 +674,9 @@
         "selectPhotos": "写真を選択",
         "editPhotos": "写真の選択を編集",
         "selectedCount": "{count}枚の写真を選択しました",
-        "clearAll": "すべてクリア"
+        "clearAll": "すべてクリア",
+        "isHiddenHelp": "非表示のアルバムはログインユーザーのみが閲覧可能で、アルバム内の写真はホーム画面",
+        "isHidden": "アルバムを隠す"
       },
       "table": {
         "columns": {
@@ -882,6 +908,18 @@
           "label": "MapLibre スタイル",
           "description": "MapLibre 地図スタイル URL"
         }
+      },
+      "amap": {
+        "key": {
+          "description": "Gaode Map JS API キー",
+          "help": "フロントエンド地図表示用オープンプラットフォームAmapにてWeb側(JS API)キーを申請してください。",
+          "label": "Gaode Map JS API キー"
+        },
+        "securityCode": {
+          "description": "Amap セキュリティ キー (オプション)",
+          "help": "API 呼び出しのセキュリティを向上させるために使用され、Amap オープン プラットフォームで構成できます。",
+          "label": "Amapセキュリティキー"
+        }
       }
     },
     "location": {
@@ -898,6 +936,17 @@
           "description": "Nominatim リバースジオコーディング API のベース URL",
           "help": "空のままにすると、デフォルトで公開 Nominatim サービスを使用します"
         }
+      },
+      "amap": {
+        "key": {
+          "description": "Amap WebサービスAPIキー",
+          "help": "ジオコーディング サービス用の Amap オープン プラットフォームで Web サービス API キーを申請してください。",
+          "label": "Amap APIキー"
+        }
+      },
+      "provider": {
+        "description": "リバース ジオコーディング サービス プロバイダーを選択する",
+        "label": "位置情報サービスプロバイダー"
       }
     },
     "storage": {
@@ -1135,14 +1184,28 @@
           "on": "On"
         }
       }
+    },
+    "storage_provider": {
+      "provider": {
+        "description": "写真を保存するストレージ プランを選択してください",
+        "label": "現在のストレージ プラン"
+      }
     }
   },
   "wizard": {
     "admin": {
-      "username": { "label": "ユーザー名" },
-      "email": { "label": "メールアドレス" },
-      "password": { "label": "パスワード" },
-      "confirmPassword": { "label": "パスワード（確認）" }
+      "username": {
+        "label": "ユーザー名"
+      },
+      "email": {
+        "label": "メールアドレス"
+      },
+      "password": {
+        "label": "パスワード"
+      },
+      "confirmPassword": {
+        "label": "パスワード（確認）"
+      }
     },
     "map": {
       "provider": {
@@ -1174,6 +1237,56 @@
           "label": "高徳地図（AMap）",
           "description": "中国向けに最適化されたジオコーディングサービス、正確な中国語の住所。"
         }
+      }
+    }
+  },
+  "upload": {
+    "duplicate": {
+      "block": {
+        "message": "写真「{fileName}」はすでに存在します。重複したファイルはアップロードできません",
+        "suggestion": "1) ファイルの名前を変更し、再アップロードします。 2) 設定で「警告モード」に切り替えて上書きを許可します",
+        "title": "ファイルはすでに存在します"
+      },
+      "skip": {
+        "info": "{dateTaken} に撮影された既存の写真",
+        "message": "写真「{fileName}」はすでに存在するため、アップロードは自動的にスキップされました。",
+        "title": "重複ファイルをスキップする"
+      },
+      "warn": {
+        "info": "既存の写真: {title}、撮影日: {dateTaken}",
+        "message": "写真「{fileName}」はすでに存在します。アップロードを続けると、既存の写真が上書きされます。",
+        "title": "重複ファイルが検出されました",
+        "warning": "上書き後は、元の写真のすべての情報（EXIF、タグ、ステートメントなど）が置き換えられます。"
+      }
+    },
+    "error": {
+      "invalidType": {
+        "message": "サポートされていないメディア タイプ: {type}",
+        "suggestion": "許可されるタイプ: {allowed}",
+        "title": "サポートされていないファイル形式"
+      },
+      "required": {
+        "message": "{field} パラメータを入力してください",
+        "title": "必須パラメータが欠落しています"
+      },
+      "tooLarge": {
+        "message": "ファイルサイズ {size}MB が制限を超えています",
+        "suggestion": "許可される最大値 {maxSize}MB",
+        "title": "ファイルが大きすぎます"
+      },
+      "uploadFailed": {
+        "message": "アップロード中にエラーが発生しました。後でもう一度お試しください。",
+        "title": "アップロードに失敗しました"
+      }
+    },
+    "success": {
+      "check": {
+        "message": "{total} 個のファイルがチェックされ、{duplicates} 個が見つかりました",
+        "title": "チェック完了"
+      },
+      "upload": {
+        "multiple": "{count} 枚の写真が正常にアップロードされました。処理しています...",
+        "single": "写真は正常にアップロードされ、処理中です..."
       }
     }
   }

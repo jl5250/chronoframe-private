@@ -113,6 +113,21 @@
       },
       "backToTop": {
         "tooltip": "回到頂部"
+      },
+      "backtotop": {
+        "tooltip": "回到頂部"
+      },
+      "encryption": {
+        "enabled": {
+          "description": "上傳和生成的縮略圖將以加密形式保存在存儲方案中",
+          "help": "開啟後存儲中保存的是加密數據，前端訪問時由系統自動解密呈現",
+          "label": "啟用存儲加密"
+        },
+        "key": {
+          "description": "用於加密/解密存儲數據的密鑰",
+          "help": "建議使用隨機 32 字節密鑰（hex/base64），不要丟失，否則無法解密已存文件",
+          "label": "加密密鑰"
+        }
       }
     },
     "stats": {
@@ -123,7 +138,8 @@
       "noImage": "空相簿",
       "emptyAlbumTip": "新增相片開始吧",
       "noDescription": "無描述"
-    }
+    },
+    "indexPanelCountCity": "等 {count} 個城市"
   },
   "album": {
     "notFound": "找不到相簿",
@@ -344,14 +360,18 @@
       },
       "encryption": {
         "enabled": {
-          "label": "Encrypt Storage",
-          "description": "Encrypt files before storing them in the configured provider",
-          "help": "When enabled, uploads and generated thumbnails are stored encrypted; the app will decrypt when serving to users"
+          "label": "加密儲存",
+          "description": "在將檔案儲存到已設定的提供者之前先加密",
+          "help": "啟用時，上傳的檔案和生成的縮圖將以加密方式儲存；應用程式在提供給使用者時會進行解密",
+          "options": {
+            "off": "關閉",
+            "on": "開啟"
+          }
         },
         "key": {
-          "label": "Encryption Key",
-          "description": "Key used to encrypt/decrypt stored files",
-          "help": "Use a random 32-byte key (hex/base64) and keep it safe; changing it will make old encrypted files unreadable"
+          "label": "加密金鑰",
+          "description": "用於加密/解密儲存檔案的金鑰",
+          "help": "使用一個隨機的 32 字節金鑰（十六進制/Base64），並妥善保存；更改它將導致舊的加密檔案無法讀取"
         }
       }
     }
@@ -375,7 +395,9 @@
     "generalSettings": "基本設置",
     "appearanceSettings": "外觀設置",
     "mapAndLocation": "地圖和位置",
-    "location": "位置服務"
+    "location": "位置服務",
+    "storageSettings": "存儲設置",
+    "systemSettings": "系統設置"
   },
   "auth": {
     "form": {
@@ -385,11 +407,16 @@
       },
       "action": {
         "or": "或",
-        "continue": "繼續"
+        "continue": "繼續",
+        "backToHome": "回到首頁"
       },
       "labels": {
         "email": "電子郵箱",
         "password": "密碼"
+      },
+      "errors": {
+        "invalidEmail": "無效的電子郵件地址",
+        "invalidPassword": "密碼至少需要6個字符"
       }
     }
   },
@@ -427,7 +454,8 @@
         "data": "{0}拍攝了 {1} 張照片",
         "noData": "{0}沒有照片"
       }
-    }
+    },
+    "unknown": "未知"
   },
   "dashboard": {
     "photos": {
@@ -646,7 +674,9 @@
         "selectPhotos": "選擇照片",
         "editPhotos": "修改照片選擇",
         "selectedCount": "已選擇 {count} 張照片",
-        "clearAll": "全部清除"
+        "clearAll": "全部清除",
+        "isHiddenHelp": "隱藏的相冊只有登錄用戶可見，相冊中的照片也不會在首頁顯示",
+        "isHidden": "隱藏相冊"
       },
       "table": {
         "columns": {
@@ -878,6 +908,18 @@
           "label": "MapLibre 樣式",
           "description": "MapLibre 地圖樣式 URL"
         }
+      },
+      "amap": {
+        "key": {
+          "description": "高德地圖 JS API Key",
+          "help": "請在高德開放平台申請 Web 端（JS API）密鑰，用於前端地圖顯示",
+          "label": "高德地圖 JS API Key"
+        },
+        "securityCode": {
+          "description": "高德地圖安全密鑰（可選）",
+          "help": "用於提高 API 調用的安全性，可在高德開放平台配置",
+          "label": "高德地圖安全密鑰"
+        }
       }
     },
     "location": {
@@ -894,6 +936,17 @@
           "description": "Nominatim 反向地理編碼 API 的基礎 URL",
           "help": "留空則預設使用公開 Nominatim 服務"
         }
+      },
+      "amap": {
+        "key": {
+          "description": "高德地圖 Web 服務 API Key",
+          "help": "請在高德開放平台申請 Web 服務 API 密鑰，用於地理編碼服務",
+          "label": "高德地圖 API Key"
+        }
+      },
+      "provider": {
+        "description": "選擇反向地理編碼服務提供商",
+        "label": "位置服務提供商"
       }
     },
     "storage": {
@@ -1131,14 +1184,28 @@
           "on": "允許"
         }
       }
+    },
+    "storage_provider": {
+      "provider": {
+        "description": "選擇用於存儲照片的存儲方案",
+        "label": "當前存儲方案"
+      }
     }
   },
   "wizard": {
     "admin": {
-      "username": { "label": "使用者名稱" },
-      "email": { "label": "電子郵件" },
-      "password": { "label": "密碼" },
-      "confirmPassword": { "label": "確認密碼" }
+      "username": {
+        "label": "使用者名稱"
+      },
+      "email": {
+        "label": "電子郵件"
+      },
+      "password": {
+        "label": "密碼"
+      },
+      "confirmPassword": {
+        "label": "確認密碼"
+      }
     },
     "map": {
       "provider": {
@@ -1170,6 +1237,56 @@
           "label": "高德地圖",
           "description": "適合中國地區使用的地理編碼服務，提供準確的中文地址。"
         }
+      }
+    }
+  },
+  "upload": {
+    "duplicate": {
+      "block": {
+        "message": "照片 \"{fileName}\" 已存在，無法上傳重複文件",
+        "suggestion": "您可以：1) 重命名文件後重新上傳；2) 在設置中切換到\"警告模式\"以允許覆蓋",
+        "title": "文件已存在"
+      },
+      "skip": {
+        "info": "現有照片拍攝於 {dateTaken}",
+        "message": "照片 \"{fileName}\" 已存在，已自動跳過上傳",
+        "title": "跳過重複文件"
+      },
+      "warn": {
+        "info": "現有照片：{title}，拍攝於 {dateTaken}",
+        "message": "照片 \"{fileName}\" 已存在，繼續上傳將會覆蓋現有照片",
+        "title": "檢測到重複文件",
+        "warning": "覆蓋後，原有照片的所有信息（EXIF、標籤、表態等）將被替換"
+      }
+    },
+    "error": {
+      "invalidType": {
+        "message": "不支持的媒體類型：{type}",
+        "suggestion": "允許的類型：{allowed}",
+        "title": "不支持的文件類型"
+      },
+      "required": {
+        "message": "請提供 {field} 參數",
+        "title": "缺少必填參數"
+      },
+      "tooLarge": {
+        "message": "文件大小 {size}MB 超過限制",
+        "suggestion": "最大允許 {maxSize}MB",
+        "title": "文件太大"
+      },
+      "uploadFailed": {
+        "message": "上傳過程中發生錯誤，請稍後重試",
+        "title": "上傳失敗"
+      }
+    },
+    "success": {
+      "check": {
+        "message": "已檢查 {total} 個文件，發現 {duplicates} 個重複文件",
+        "title": "檢查完成"
+      },
+      "upload": {
+        "multiple": "已成功上傳 {count} 張照片，正在處理中...",
+        "single": "照片已成功上傳，正在處理中..."
       }
     }
   }
