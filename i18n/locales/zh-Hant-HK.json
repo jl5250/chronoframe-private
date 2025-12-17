@@ -113,6 +113,21 @@
       },
       "backtotop": {
         "tooltip": "回到頂部"
+      },
+      "backToTop": {
+        "tooltip": "回到頂部"
+      },
+      "encryption": {
+        "enabled": {
+          "description": "ä¸Šä¼ å’Œç”Ÿæˆçš„ç¼©ç•¥å›¾å°†ä»¥åŠ å¯†å½¢å¼ä¿ \nå­˜åœ¨å­˜å‚¨æ–¹æ¡ \nˆä¸­",
+          "help": "å¼€å¯åŽå­˜å‚¨ä¸­å­˜çš„æ˜¯åŠ å¯†æ•°æ®ï¼Œå‰ç«¯è®¿é—®æ—¶ç”±ç³»ç»Ÿè‡ªåŠ¨è§£å¯†å‘ˆçŽ°",
+          "label": "å¯ç”¨å­˜å‚¨åŠ å¯†"
+        },
+        "key": {
+          "description": "ç”¨äºŽåŠ å¯†/è§£å¯†å­˜å‚¨æ•°æ®çš„å¯†é’¥",
+          "help": "å»ºè®®ä½¿ \nç”¨éšæœº 32 å­—èŠ‚å¯†é’¥ï¼ˆhex/base64ï¼‰ï¼Œä¸?è¦?ä¸¢å¤±ï¼Œå¦åˆ™æ— æ³•è§£å¯†å·²å­˜æ–‡ä»¶",
+          "label": "åŠ å¯†å¯†é’¥"
+        }
       }
     },
     "stats": {
@@ -123,7 +138,8 @@
       "noImage": "空相簿",
       "emptyAlbumTip": "新增相片開始啦",
       "noDescription": "無描述"
-    }
+    },
+    "indexPanelCountCity": "等 {count} 個城市"
   },
   "album": {
     "notFound": "搵唔到相簿",
@@ -344,18 +360,18 @@
       },
       "encryption": {
         "enabled": {
-          "label": "Encrypt Storage",
-          "description": "Encrypt files before storing them in the configured provider",
-          "help": "When enabled, uploads and generated thumbnails are stored encrypted; the app will decrypt when serving to users",
+          "label": "加密儲存",
+          "description": "在將檔案儲存到已設定的提供者之前先加密",
+          "help": "啟用時，上傳的檔案和生成的縮圖將以加密方式儲存；應用程式在提供給使用者時會進行解密",
           "options": {
-            "off": "Off",
-            "on": "On"
+            "off": "關閉",
+            "on": "開啟"
           }
         },
         "key": {
-          "label": "Encryption Key",
-          "description": "Key used to encrypt/decrypt stored files",
-          "help": "Use a random 32-byte key (hex/base64) and keep it safe; changing it will make old encrypted files unreadable"
+          "label": "加密金鑰",
+          "description": "用於加密/解密儲存檔案的金鑰",
+          "help": "使用一個隨機的 32 字節金鑰（十六進制/Base64），並妥善保存；更改它將導致舊的加密檔案無法讀取"
         }
       }
     }
@@ -379,7 +395,9 @@
     "generalSettings": "基本設置",
     "appearanceSettings": "外觀設置",
     "mapAndLocation": "地圖和位置",
-    "location": "位置服務"
+    "location": "位置服務",
+    "storageSettings": "存儲設置",
+    "systemSettings": "系統設置"
   },
   "auth": {
     "form": {
@@ -389,11 +407,16 @@
       },
       "action": {
         "or": "或",
-        "continue": "繼續"
+        "continue": "繼續",
+        "backToHome": "回到首頁"
       },
       "labels": {
         "email": "電子郵箱",
         "password": "密碼"
+      },
+      "errors": {
+        "invalidEmail": "無效的電子郵件地址",
+        "invalidPassword": "密碼至少需要6個字符"
       }
     }
   },
@@ -428,10 +451,11 @@
         "recentlyYear": "最近一年"
       },
       "tooltip": {
-        "data": "{0}拍咗 {1} 張相",
+        "data": "{0}拍攝了 {1} 張照片",
         "noData": "{0}冇相"
       }
-    }
+    },
+    "unknown": "未知"
   },
   "dashboard": {
     "photos": {
@@ -650,7 +674,9 @@
         "selectPhotos": "選擇相片",
         "editPhotos": "修改相片選擇",
         "selectedCount": "已選擇 {count} 張相片",
-        "clearAll": "全部清除"
+        "clearAll": "全部清除",
+        "isHiddenHelp": "隱藏的相冊只有登錄用戶可見，相冊中的照片也不會在首頁顯示",
+        "isHidden": "隱藏相冊"
       },
       "table": {
         "columns": {
@@ -882,6 +908,18 @@
           "label": "MapLibre 樣式",
           "description": "MapLibre 地圖樣式 URL"
         }
+      },
+      "amap": {
+        "key": {
+          "description": "高德地圖 JS API Key",
+          "help": "請在高德開放平台申請 Web 端（JS API）密鑰，用於前端地圖顯示",
+          "label": "高德地圖 JS API Key"
+        },
+        "securityCode": {
+          "description": "高德地圖安全密鑰（可選）",
+          "help": "用於提高 API 調用的安全性，可在高德開放平台配置",
+          "label": "高德地圖安全密鑰"
+        }
       }
     },
     "location": {
@@ -898,6 +936,17 @@
           "description": "Nominatim 反向地理編碼 API 嘅基礎 URL",
           "help": "留空則預設使用公開 Nominatim 服務"
         }
+      },
+      "amap": {
+        "key": {
+          "description": "高德地圖 Web 服務 API Key",
+          "help": "請在高德開放平台申請 Web 服務 API 密鑰，用於地理編碼服務",
+          "label": "高德地圖 API Key"
+        }
+      },
+      "provider": {
+        "description": "選擇反向地理編碼服務提供商",
+        "label": "位置服務提供商"
       }
     },
     "storage": {
@@ -961,7 +1010,11 @@
         },
         "forcePathStyle": {
           "label": "強制路徑方式",
-          "description": "使用路徑方式 URL 而唔係虛擬主機方式"
+          "description": "使用路徑方式 URL 而唔係虛擬主機方式",
+          "options": {
+            "off": "關閉",
+            "on": "開啟"
+          }
         },
         "maxKeys": {
           "label": "最大金鑰數",
@@ -1028,7 +1081,11 @@
         "enabled": {
           "label": "啟用儲存加密",
           "description": "上傳的原檔與產生的縮略圖會以加密形式儲存於儲存方案中",
-          "help": "開啟後儲存端只保存密文；使用者存取時由系統按需解密並呈現"
+          "help": "開啟後儲存端只保存密文；使用者存取時由系統按需解密並呈現",
+          "options": {
+            "off": "關閉",
+            "on": "開啟"
+          }
         },
         "key": {
           "label": "加密金鑰",
@@ -1036,14 +1093,119 @@
           "help": "建議使用隨機 32 位元組金鑰（hex/base64）；不要遺失或隨意更換，否則歷史檔案將無法解密"
         }
       }
+    },
+    "analytics": {
+      "gtag": {
+        "id": {
+          "description": "Google Analytics 跟踪 ID（例如 G-XXXXXXX）",
+          "label": "Google Analytics ID"
+        }
+      },
+      "matomo": {
+        "enabled": {
+          "description": "啟用 Matomo 網站分析統計",
+          "label": "啟用 Matomo 分析",
+          "options": {
+            "off": "關閉",
+            "on": "開啟"
+          }
+        },
+        "siteId": {
+          "description": "Matomo 中配置的站點 ID",
+          "label": "Matomo 站點 ID"
+        },
+        "url": {
+          "description": "Matomo 服務器地址（例如 https://matomo.example.com）",
+          "label": "Matomo 實例 URL"
+        }
+      }
+    },
+    "oauth": {
+      "github": {
+        "clientId": {
+          "description": "GitHub OAuth 應用的客戶端 ID",
+          "label": "GitHub Client ID"
+        },
+        "clientSecret": {
+          "description": "GitHub OAuth 應用的客戶端密鑰",
+          "label": "GitHub Client Secret"
+        },
+        "enabled": {
+          "description": "允許用戶使用 GitHub 賬號登錄",
+          "label": "啟用 GitHub OAuth",
+          "options": {
+            "off": "關閉",
+            "on": "開啟"
+          }
+        }
+      }
+    },
+    "security": {
+      "allowInsecureCookie": {
+        "description": "僅在開發環境使用，生產環境請勿啟用",
+        "label": "允許不安全的 Cookie",
+        "options": {
+          "off": "不允許",
+          "on": "允許"
+        }
+      }
+    },
+    "storage_provider": {
+      "provider": {
+        "description": "選擇用於存儲照片的存儲方案",
+        "label": "當前存儲方案"
+      }
+    },
+    "upload": {
+      "duplicateCheck": {
+        "enabled": {
+          "description": "上傳時自動檢測重複文件",
+          "label": "啟用重複文件檢測",
+          "options": {
+            "off": "關閉",
+            "on": "開啟"
+          }
+        },
+        "mode": {
+          "description": "檢測到重複文件時的處理方式",
+          "label": "重複文件處理模式",
+          "options": {
+            "block": "阻止上傳",
+            "skip": "跳過",
+            "warn": "警告並覆蓋"
+          }
+        }
+      },
+      "mime": {
+        "whitelist": {
+          "description": "允許上傳的文件類型列表，用逗號分隔",
+          "label": "允許的 MIME 類型"
+        },
+        "whitelistEnabled": {
+          "description": "啟用後只允許上傳指定類型的文件",
+          "label": "啟用 MIME 類型白名單",
+          "options": {
+            "off": "關閉",
+            "on": "開啟"
+          }
+        }
+      }
     }
   },
   "wizard": {
     "admin": {
-      "username": { "label": "用戶名" },
-      "email": { "label": "電子郵箱" },
-      "password": { "label": "密碼" },
-      "confirmPassword": { "label": "確認密碼" }
+      "username": {
+        "label": "用戶名"
+      },
+      "email": {
+        "label": "電子郵箱"
+      },
+      "password": {
+        "label": "密碼"
+      },
+      "confirmPassword": {
+        "label": "確認密碼"
+      }
     },
     "map": {
       "provider": {
@@ -1075,6 +1237,56 @@
           "label": "高德地圖",
           "description": "適合中國地區使用的地理編碼服務，提供準確的中文地址。"
         }
+      }
+    }
+  },
+  "upload": {
+    "duplicate": {
+      "block": {
+        "message": "照片 \"{fileName}\" 已存在，無法上傳重複文件",
+        "suggestion": "您可以：1) 重命名文件後重新上傳；2) 在設置中切換到\"警告模式\"以允許覆蓋",
+        "title": "文件已存在"
+      },
+      "skip": {
+        "info": "現有照片拍攝於 {dateTaken}",
+        "message": "照片 \"{fileName}\" 已存在，已自動跳過上傳",
+        "title": "跳過重複文件"
+      },
+      "warn": {
+        "info": "現有照片：{title}，拍攝於 {dateTaken}",
+        "message": "照片 \"{fileName}\" 已存在，繼續上傳將會覆蓋現有照片",
+        "title": "檢測到重複文件",
+        "warning": "覆蓋後，原有照片的所有信息（EXIF、標籤、表態等）將被替換"
+      }
+    },
+    "error": {
+      "invalidType": {
+        "message": "不支持的媒體類型：{type}",
+        "suggestion": "允許的類型：{allowed}",
+        "title": "不支持的文件類型"
+      },
+      "required": {
+        "message": "請提供 {field} 參數",
+        "title": "缺少必填參數"
+      },
+      "tooLarge": {
+        "message": "文件大小 {size}MB 超過限制",
+        "suggestion": "最大允許 {maxSize}MB",
+        "title": "文件太大"
+      },
+      "uploadFailed": {
+        "message": "上傳過程中發生錯誤，請稍後重試",
+        "title": "上傳失敗"
+      }
+    },
+    "success": {
+      "check": {
+        "message": "已檢查 {total} 個文件，發現 {duplicates} 個重複文件",
+        "title": "檢查完成"
+      },
+      "upload": {
+        "multiple": "已成功上傳 {count} 張照片，正在處理中...",
+        "single": "照片已成功上傳，正在處理中..."
       }
     }
   }
