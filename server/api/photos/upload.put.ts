@@ -1,13 +1,14 @@
 import { useStorageProvider } from '~~/server/utils/useStorageProvider'
 import { logger } from '~~/server/utils/logger'
 import { settingsManager } from '~~/server/services/settings/settingsManager'
+import { safeUseTranslation } from '~~/server/utils/i18n'
 
 export default eventHandler(async (event) => {
   await requireUserSession(event)
 
   const { storageProvider } = useStorageProvider(event)
   const key = getQuery(event).key as string | undefined
-  const t = await useTranslation(event)
+  const t = await safeUseTranslation(event)
 
   if (!key) {
     throw createError({

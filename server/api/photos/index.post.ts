@@ -3,6 +3,7 @@ import { useStorageProvider } from '~~/server/utils/useStorageProvider'
 import { eq } from 'drizzle-orm'
 import { generateSafePhotoId } from '~~/server/utils/file-utils'
 import { isStorageEncryptionEnabled, resolveOriginalKeyForPhoto, toFileProxyUrl } from '~~/server/utils/publicFile'
+import { safeUseTranslation } from '~~/server/utils/i18n'
 
 const VIDEO_EXTENSIONS = new Set([
   '.mov',
@@ -54,7 +55,7 @@ export default eventHandler(async (event) => {
   await requireUserSession(event)
   const { storageProvider } = useStorageProvider(event)
   const config = useRuntimeConfig(event)
-  const t = await useTranslation(event)
+  const t = await safeUseTranslation(event)
   const encryptionEnabled = await isStorageEncryptionEnabled()
 
   const body = await readBody(event)

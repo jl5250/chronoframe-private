@@ -25,6 +25,49 @@ const combinePrefixAndKey = (prefix: string | undefined, key: string) => {
     : `${cleanPrefix}/${cleanKey}`
 }
 
+const normalizeEndpoint = (
+  endpoint: string,
+  bucket: string,
+  forcePathStyle?: boolean,
+): string => {
+  let url: URL
+  try {
+    url = new URL(endpoint)
+  } catch {
+    return endpoint
+  }
+
+  const hadTrailingSlash = endpoint.endsWith('/')
+
+  if (url.hostname.endsWith('.')) {
+    url.hostname = url.hostname.slice(0, -1)
+  }
+
+  const bucketPrefix = `${bucket}.`
+  if (!forcePathStyle && url.hostname.startsWith(bucketPrefix)) {
+    url.hostname = url.hostname.slice(bucketPrefix.length)
+  }
+
+  let normalized = url.toString()
+  if (!hadTrailingSlash && normalized.endsWith('/')) {
+    normalized = normalized.slice(0, -1)
+  }
+
+  return normalized
+}
+
+const getHttpStatusCode = (error: unknown): number | undefined => {
+  if (typeof error !== 'object' || error === null) {
+    return undefined
+  }
+  const metadata: unknown = Reflect.get(error, '$metadata')
+  if (typeof metadata !== 'object' || metadata === null) {
+    return undefined
+  }
+  const httpStatusCode: unknown = Reflect.get(metadata, 'httpStatusCode')
+  return typeof httpStatusCode === 'number' ? httpStatusCode : undefined
+}
+
 const createClient = (config: S3StorageConfig): S3Client => {
   if (config.provider !== 's3') {
     throw new Error('Invalid provider for S3 client creation')
@@ -35,8 +78,14 @@ const createClient = (config: S3StorageConfig): S3Client => {
     throw new Error('Missing required accessKeyId or secretAccessKey')
   }
 
-  const clientConfig: S3ClientConfig = {
+  const normalizedEndpoint = normalizeEndpoint(
     endpoint,
+    config.bucket,
+    config.forcePathStyle,
+  )
+
+  const clientConfig: S3ClientConfig = {
+    endpoint: normalizedEndpoint,
     region,
     forcePathStyle: config.forcePathStyle,
     responseChecksumValidation: 'WHEN_REQUIRED',
@@ -222,7 +271,7 @@ export class S3StorageProvider implements StorageProvider {
         etag: resp.ETag,
       }
     } catch (error) {
-      if ((error as any).$metadata?.httpStatusCode === 404) {
+      if (getHttpStatusCode(error) === 404) {
         return null
       }
       this.logger?.error(`Failed to get metadata for key: ${key}`, error)

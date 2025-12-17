@@ -9,6 +9,8 @@ import { extractExifData } from '~~/server/services/image/exif'
 import { tables, useDB } from '~~/server/utils/db'
 import { useStorageProvider } from '~~/server/utils/useStorageProvider'
 import { isStorageEncryptionEnabled, resolveOriginalKeyForPhoto, toFileProxyUrl } from '~~/server/utils/publicFile'
+import { safeUseTranslation } from '~~/server/utils/i18n'
+
 
 const paramsSchema = z.object({
   photoId: z.string().min(1),
@@ -48,7 +50,7 @@ const normalizeTags = (tags: string[] | undefined) => {
 export default eventHandler(async (event) => {
   await requireUserSession(event)
 
-  const t = await useTranslation(event)
+  const t = await safeUseTranslation(event)
   const { photoId } = paramsSchema.parse(event.context.params ?? {})
   const payload = bodySchema.parse(await readBody(event))
 

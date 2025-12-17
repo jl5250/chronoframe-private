@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm'
 import { generateSafePhotoId } from '~~/server/utils/file-utils'
 import { isStorageEncryptionEnabled, resolveOriginalKeyForPhoto, toFileProxyUrl } from '~~/server/utils/publicFile'
 import { useStorageProvider } from '~~/server/utils/useStorageProvider'
+import { safeUseTranslation } from '~~/server/utils/i18n'
 
 /**
  * 检查照片是否已存在
@@ -11,7 +12,7 @@ import { useStorageProvider } from '~~/server/utils/useStorageProvider'
 export default defineEventHandler(async (event) => {
   await requireUserSession(event)
 
-  const t = await useTranslation(event)
+  const t = await safeUseTranslation(event)
   const { storageProvider } = useStorageProvider(event)
   const encryptionEnabled = await isStorageEncryptionEnabled()
   const toUrl = (key?: string | null) => {
