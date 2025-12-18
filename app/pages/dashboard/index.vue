@@ -13,11 +13,24 @@ useHead({
 const dayjs = useDayjs()
 const config = useRuntimeConfig()
 const { photos } = usePhotos()
+const { locale } = useI18n()
 
 const { data: dashboardStats, refresh: refreshStats } =
   await useFetch('/api/system/stats')
 
 const isLoading = ref(false)
+
+const percentFormatter = computed(
+  () =>
+    new Intl.NumberFormat(locale.value, {
+      style: 'percent',
+      maximumFractionDigits: 0,
+    }),
+)
+
+const formatPercent0To100 = (value: number) => {
+  return percentFormatter.value.format(value / 100)
+}
 
 // 年份选择器相关状态
 const selectedYear = ref<number | 'recent'>('recent')
@@ -129,7 +142,7 @@ const onShareSite = () => {
   const discussionParams = new URLSearchParams({
     category: 'showcases',
     title: `Show: ${config.public.app.title}`,
-    body: `## Description / Motto\n\n${config.public.app.slogan}\n\n## URL\n\n[${window.location.origin}](${window.location.origin})`,
+    body: `## Description / Motto\n\n${$t('dashboard.overview.section.shareSite.description')}\n\n## URL\n\n[${window.location.origin}](${window.location.origin})`,
   })
   window.open(
     `https://github.com/cpt-kenvie/chronoframe-private/discussions/new?${discussionParams}`,
@@ -200,7 +213,11 @@ const onShareSite = () => {
                 external
                 :to="`https://github.com/cpt-kenvie/chronoframe-private/releases/tag/v${$config.public.VERSION}`"
               >
-                v{{ $config.public.VERSION }}
+                {{
+                  $t('dashboard.overview.section.runtimeInfo.versionTag', [
+                    $config.public.VERSION,
+                  ])
+                }}
               </NuxtLink>
             </div>
             <div>
@@ -247,7 +264,7 @@ const onShareSite = () => {
         </div> -->
             <div>
               <p class="text-sm text-neutral-500 dark:text-neutral-400">
-                Share Your Site
+                {{ $t('dashboard.overview.section.shareSite.title') }}
               </p>
               <p class="text-lg font-bold">
                 <UButton
@@ -258,7 +275,7 @@ const onShareSite = () => {
                   trailing-icon="tabler:external-link"
                   @click="onShareSite"
                 >
-                  分享你的站点
+                  {{ $t('dashboard.overview.section.shareSite.button') }}
                 </UButton>
               </p>
             </div>
@@ -391,13 +408,13 @@ const onShareSite = () => {
                   <span>
                     {{
                       dashboardStats?.memory
-                        ? Math.round(
+                        ? formatPercent0To100(
                             (dashboardStats.memory.used /
                               dashboardStats.memory.total) *
                               100,
                           )
-                        : 0
-                    }}%
+                        : formatPercent0To100(0)
+                    }}
                   </span>
                 </div>
               </div>
@@ -460,10 +477,10 @@ const onShareSite = () => {
                     variant="soft"
                   >
                     {{
-                      Math.round(
+                      formatPercent0To100(
                         dashboardStats?.workerPool?.averageSuccessRate || 0,
                       )
-                    }}%
+                    }}
                   </UBadge>
                 </div>
               </div>

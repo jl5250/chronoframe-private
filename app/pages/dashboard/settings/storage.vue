@@ -43,9 +43,16 @@ const storageUploadLimitField = computed(() => {
 
 const handleStorageEncryptionSubmit = async () => {
   try {
+    if (storageState['encryption.enabled']) {
+      await storageSubmit({
+        'encryption.enabled': storageState['encryption.enabled'],
+        'encryption.key': storageState['encryption.key'],
+      })
+      return
+    }
+
     await storageSubmit({
       'encryption.enabled': storageState['encryption.enabled'],
-      'encryption.key': storageState['encryption.key'],
     })
   } catch {
     /* empty */

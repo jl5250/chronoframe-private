@@ -750,6 +750,7 @@
         "runtimeInfo": {
           "title": "操作情報",
           "version": "ランニングバージョン",
+          "versionTag": "v{0}",
           "uptime": "実行時間",
           "environment": "ランニング環境",
           "lastUpdate": "最後に更新されました",
@@ -780,6 +781,11 @@
           "totalProcessed": "処理",
           "totalFailed": "障害カウント",
           "avgSuccessRate": "成功率"
+        },
+        "shareSite": {
+          "title": "共有サイト",
+          "description": "私のウェブサイトを共有する",
+          "button": "共有サイト"
         }
       }
     },

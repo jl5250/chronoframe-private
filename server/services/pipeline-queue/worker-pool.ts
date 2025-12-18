@@ -94,7 +94,7 @@ export class WorkerPool {
     }
 
     this.logger.success(
-      `工作池已成功启动，包含 ${this.workers.length} 个工作进程`,
+      `工作池已成功启动，包含 ${this.workers.length} 个Workers`,
     )
   }
 

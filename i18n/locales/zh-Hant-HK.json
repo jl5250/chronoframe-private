@@ -750,6 +750,7 @@
         "runtimeInfo": {
           "title": "運行信息",
           "version": "運行版本",
+          "versionTag": "v{0}",
           "uptime": "運行時間",
           "environment": "運行環境",
           "lastUpdate": "最後更新",
@@ -780,6 +781,11 @@
           "totalProcessed": "已處理",
           "totalFailed": "失敗計數",
           "avgSuccessRate": "成功率"
+        },
+        "shareSite": {
+          "title": "分享站點",
+          "description": "分享我的網站",
+          "button": "分享站點"
         }
       }
     },

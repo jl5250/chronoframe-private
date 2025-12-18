@@ -800,6 +800,7 @@
         "runtimeInfo": {
           "title": "Runtime Information",
           "version": "Version",
+          "versionTag": "v{0}",
           "uptime": "Uptime",
           "environment": "Environment",
           "lastUpdate": "Last Updated",
@@ -830,6 +831,11 @@
           "totalProcessed": "Processed",
           "totalFailed": "Failure count",
           "avgSuccessRate": "Success rate"
+        },
+        "shareSite": {
+          "title": "share site",
+          "description": "share my website",
+          "button": "share site"
         }
       }
     },

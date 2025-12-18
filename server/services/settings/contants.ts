@@ -179,7 +179,7 @@ export const DEFAULT_SETTINGS = [
     namespace: 'storage',
     key: 'encryption.enabled',
     type: 'boolean',
-    defaultValue: true,
+    defaultValue: false,
     label: 'settings.storage.encryption.enabled.label',
     description: 'settings.storage.encryption.enabled.description',
   },

@@ -8,7 +8,7 @@ export default defineI18nConfig(() => {
       'zh-TW': ['zh-Hant-TW'],
       'zh-HK': ['zh-Hant-HK'],
       'zh-MO': ['zh-Hant-HK'],
-      'default': ['en'],
+      'default': ['zh-Hans'],
     },
   }
 })

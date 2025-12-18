@@ -800,6 +800,7 @@
         "runtimeInfo": {
           "title": "运行信息",
           "version": "运行版本",
+          "versionTag": "v{0}",
           "uptime": "运行时间",
           "environment": "运行环境",
           "lastUpdate": "最后更新",
@@ -830,6 +831,11 @@
           "totalProcessed": "已处理",
           "totalFailed": "失败计数",
           "avgSuccessRate": "成功率"
+        },
+        "shareSite": {
+          "title": "分享站点",
+          "description": "分享我的网站",
+          "button": "分享站点"
         }
       }
     },
