@@ -16,7 +16,7 @@ try {
   mkdirSync(dataDir, { recursive: true })
 
   const dbPath =
-    process.env.DATABASE_URL || join(dataDir, 'app.sqlite3')
+    process.env.DATABASE_URL || join(dataDir, 'app.sqlite3') || '/app/data/app.sqlite3'
 
   const sqlite = new Database(dbPath)
   const db = drizzle(sqlite)
