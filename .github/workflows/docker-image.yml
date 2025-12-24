@@ -2,17 +2,33 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - 'main'
+    tags:
+      - 'v*'
   pull_request:
-    branches: [ "main" ]
-
+    branches:
+      - 'main'
+      
 jobs:
-  build-and-deploy:
+  docker:
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        
+      - name: Docker 元数据
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            name/app
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
 
       - name: Login to Docker Hub
         uses: docker/login-action@v1
@@ -21,9 +37,10 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v5
         with:
           context: .
-          push: true
-          tags: jl5250/chronoframe:latest
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           
