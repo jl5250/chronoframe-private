@@ -7,8 +7,8 @@ const { photos } = usePhotos()
 </script>
 
 <template>
-  <div class="relative h-screen">
-    <div class="h-svh px-1">
+  <div class="relative min-h-screen flex flex-col">
+    <div class="flex-1 h-svh px-1">
       <ClientOnly>
         <MasonryRoot
           :photos="photos"
@@ -29,6 +29,8 @@ const { photos } = usePhotos()
       </ClientOnly>
       <slot />
     </div>
+    <!-- 添加备案信息 Footer -->
+    <Footer />
   </div>
 </template>
 
