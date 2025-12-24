@@ -27,15 +27,26 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Get tag version
+        id: tag
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+          else
+            TAG="latest"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: jl5250/chronoframe:latest
+          tags: |
+            jl5250/chronoframe:${{ steps.tag.outputs.tag }}
+            jl5250/chronoframe:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
             NODE_OPTIONS=--max-old-space-size=8192
-          platforms: linux/amd64,linux/arm64
           
