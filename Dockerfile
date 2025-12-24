@@ -1,6 +1,8 @@
 FROM node:22-alpine AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
+# 增加内存限制和优化垃圾回收
+ENV NODE_OPTIONS="--max-old-space-size=6144 --max-semi-space-size=128"
 RUN corepack enable
 
 FROM base AS deps
@@ -15,8 +17,19 @@ WORKDIR /usr/src/app
 COPY --from=deps /usr/src/app/node_modules ./node_modules
 COPY --from=deps /usr/src/app/packages/webgl-image/node_modules ./packages/webgl-image/node_modules
 COPY . .
-RUN NODE_OPTIONS="--max-old-space-size=4096" pnpm run build:deps
-RUN NODE_OPTIONS="--max-old-space-size=4096" pnpm run build
+
+# 先清理可能的缓存
+RUN rm -rf .nuxt .output dist node_modules/.cache
+
+# 设置环境变量 - 增加内存并优化垃圾回收
+ARG NODE_OPTIONS=""
+ENV NODE_OPTIONS="--max-old-space-size=6144 --max-semi-space-size=128 ${NODE_OPTIONS}"
+
+# 构建依赖
+RUN pnpm run build:deps
+
+# 构建主项目
+RUN pnpm run build
 
 FROM node:22-alpine AS runtime
 RUN apk add --no-cache libc6-compat perl exiftool ffmpeg
