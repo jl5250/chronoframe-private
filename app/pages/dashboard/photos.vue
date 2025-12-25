@@ -2992,7 +2992,7 @@ onUnmounted(() => {
 
         <UModal v-model:open="isEditModalOpen">
           <template #content>
-            <div class="p-6 space-y-6">
+            <div class="p-6 space-y-6 max-h-[calc(100vh-8rem)] overflow-y-auto">
               <div class="space-y-1">
                 <h2
                   class="text-lg font-semibold text-neutral-800 dark:text-neutral-100"

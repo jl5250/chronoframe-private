@@ -641,7 +641,7 @@ onUnmounted(() => {
           :src="photo.thumbnailUrl || ''"
           :alt="photo.title || 'Photo thumbnail'"
           :thumbhash="photo.thumbnailHash || ''"
-          class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          class="absolute inset-0 w-full h-full object-cover transition-all duration-300 ease-in-out group-hover:scale-103 group-hover:shadow-lg"
           @load="handleImageLoad"
           @error="handleImageError"
         />

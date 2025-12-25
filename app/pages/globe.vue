@@ -404,20 +404,26 @@ onBeforeRouteLeave(() => {
           </template>
         </MapProvider>
         <template v-else>
-          <div class="w-full h-full flex items-center justify-center">
-            <Icon
-              name="tabler:map-pin-off"
-              class="size-10 text-gray-500 animate-pulse"
-            />
+          <div class="w-full h-full flex flex-col items-center justify-center gap-4">
+            <div class="relative">
+              <div class="w-16 h-16 rounded-full border-4 border-neutral-200 dark:border-neutral-700" />
+              <div class="absolute inset-0 w-16 h-16 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+            </div>
+            <p class="text-sm text-neutral-500 dark:text-neutral-400">
+              正在加载地图...
+            </p>
           </div>
         </template>
 
         <template #fallback>
-          <div class="w-full h-full flex items-center justify-center">
-            <Icon
-              name="tabler:map-pin-off"
-              class="size-10 text-gray-500 animate-pulse"
-            />
+          <div class="w-full h-full flex flex-col items-center justify-center gap-4">
+            <div class="relative">
+              <div class="w-16 h-16 rounded-full border-4 border-neutral-200 dark:border-neutral-700" />
+              <div class="absolute inset-0 w-16 h-16 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+            </div>
+            <p class="text-sm text-neutral-500 dark:text-neutral-400">
+              正在初始化地图...
+            </p>
           </div>
         </template>
       </ClientOnly>
