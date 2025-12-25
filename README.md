@@ -99,5 +99,5 @@ docker run -d --name chronoframe --restart unless-stopped -p 3000:3000 -v ./data
 
 ## 🙏 致谢
 
-- 原项目：[HoshinoSuzumi/chronoframe](https://github.com/HoshinoSuzumi/chronoframe)
+- 原项目：[HoshinoSuzumi/chronoframe](https://github.com/HoshinoSuzumi/chronoframe) · [cpt-kenvie/chronoframe-private](https://github.com/cpt-kenvie/chronoframe-private)
 - 技术栈：[Nuxt](https://nuxt.com/) · [TailwindCSS](https://tailwindcss.com/) · [Drizzle ORM](https://orm.drizzle.team/)
