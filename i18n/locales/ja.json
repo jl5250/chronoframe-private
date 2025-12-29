@@ -892,6 +892,11 @@
           "dark": "ダーク",
           "system": "システム"
         }
+      },
+      "icpNumber": {
+        "label": "ICP 備案番号",
+        "description": "ウェブサイトのICP 備案番号",
+        "help": "ページの下部に表示されます"
       }
     },
     "map": {

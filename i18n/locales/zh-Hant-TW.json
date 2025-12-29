@@ -892,6 +892,11 @@
           "dark": "深色",
           "system": "系統"
         }
+      },
+      "icpNumber": {
+        "label": "ICP 備案號",
+        "description": "網站的 ICP 備案號",
+        "help": "將顯示在頁面底部"
       }
     },
     "map": {

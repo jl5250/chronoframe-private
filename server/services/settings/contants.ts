@@ -63,6 +63,15 @@ export const DEFAULT_SETTINGS = [
     description: 'settings.app.appearance.theme.description',
     isPublic: true,
   },
+  {
+    namespace: 'app',
+    key: 'icpNumber',
+    type: 'string',
+    defaultValue: '',
+    label: 'settings.app.icpNumber.label',
+    description: 'settings.app.icpNumber.description',
+    isPublic: true,
+  },
   // NAMESPACE: map
   {
     namespace: 'map',

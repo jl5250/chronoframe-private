@@ -942,6 +942,11 @@
           "dark": "Dark",
           "system": "System"
         }
+      },
+      "icpNumber": {
+        "label": "ICP Filing Number",
+        "description": "The ICP filing number of the website",
+        "help": "Will be displayed at the bottom of the page"
       }
     },
     "map": {

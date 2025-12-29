@@ -1,13 +1,10 @@
 <script setup lang="ts">
-
-// 备案信息配置 - 请根据实际情况修改
-const icpNumber = '粤ICP备2025392562号-1'  // 替换为你的ICP备案号
-const policeNumber = '京公网安备 11010802012345号'  // 替换为你的公安备案号（如适用）
-const showPolice = false  // 是否显示公安备案号
+// 从设置中获取 ICP 备案信息
+const icpNumber = computed(() => getSetting('app:icpNumber') || '')
 </script>
 
 <template>
-  <footer class="fixed bottom-0 left-0 right-0 z-40 bg-background/90 backdrop-blur-sm border-t border-border/50">
+  <footer v-if="icpNumber" class="fixed bottom-0 left-0 right-0 z-40 bg-background/90 backdrop-blur-sm border-t border-border/50">
     <div class="container mx-auto px-4 py-2">
       <div class="flex flex-col sm:flex-row items-center justify-center gap-3 text-xs text-muted-foreground">
         <!-- 版权信息 -->
@@ -15,29 +12,15 @@ const showPolice = false  // 是否显示公安备案号
           <span>© {{ $dayjs().format('YYYY') }}{{ getSetting('app:author') || getSetting('app:title') }}</span>
           <span class="text-border">|</span>
         </div>
-        
+
         <!-- ICP备案信息 -->
-        <a 
-          href="https://beian.miit.gov.cn/" 
-          target="_blank" 
+        <a
+          href="https://beian.miit.gov.cn/"
+          target="_blank"
           rel="noopener noreferrer"
           class="hover:text-foreground transition-colors duration-200 flex items-center gap-1"
         >
           <span>{{ icpNumber }}</span>
-        </a>
-        
-        <!-- 公安备案信息（可选） -->
-        <a 
-          v-if="showPolice"
-          href="http://www.beian.gov.cn/portal/registerSystemInfo" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          class="hover:text-foreground transition-colors duration-200 flex items-center gap-1"
-        >
-          <div class="w-3 h-3 bg-red-500 rounded-sm flex items-center justify-center">
-            <div class="w-2 h-2 bg-white rounded-sm"></div>
-          </div>
-          <span>{{ policeNumber }}</span>
         </a>
       </div>
     </div>

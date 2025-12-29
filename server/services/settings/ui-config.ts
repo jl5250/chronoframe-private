@@ -50,6 +50,11 @@ export const APP_SETTINGS_UI: Record<string, FieldUIConfig> = {
     ],
     help: 'settings.app.appearance.theme.help',
   },
+  icpNumber: {
+    type: 'input',
+    placeholder: '粤ICP备XXXXXXXX号-X',
+    help: 'settings.app.icpNumber.help',
+  },
 }
 
 export const MAP_SETTINGS_UI: Record<string, FieldUIConfig> = {
